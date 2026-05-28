@@ -6,9 +6,7 @@ app = Flask(__name__)
 USER = "mustafa"
 PASS = "kurt"
 
-# =========================
-# LOGIN
-# =========================
+# ================= LOGIN =================
 login_html = """
 <!DOCTYPE html>
 <html>
@@ -16,43 +14,75 @@ login_html = """
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login</title>
+<style>
+body{margin:0;background:#03152d;height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial;}
+.box{width:90%;max-width:400px;background:#13233d;padding:25px;border-radius:20px;color:white;text-align:center;}
+input,button{width:100%;padding:12px;margin-top:10px;border:none;border-radius:10px;}
+button{background:#0d6efd;color:white;font-size:18px;}
+.error{color:red;margin-top:10px;}
+</style>
 </head>
-<body style="margin:0;background:#03152d;color:white;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;">
-
-<div style="width:90%;max-width:400px;background:#13233d;padding:25px;border-radius:15px;text-align:center;">
+<body>
+<div class="box">
 <h2>Giriş</h2>
-
 <form method="POST">
-<input name="user" placeholder="Kullanıcı" style="width:100%;padding:10px;margin:5px 0;"><br>
-<input type="password" name="pass" placeholder="Şifre" style="width:100%;padding:10px;margin:5px 0;"><br>
-<button style="width:100%;padding:10px;background:#0d6efd;color:white;border:none;">Giriş</button>
+<input name="user">
+<input type="password" name="pass">
+<button>Giriş</button>
 </form>
-
-<p style="color:red;">{{ error }}</p>
+<p class="error">{{ error }}</p>
 </div>
-
 </body>
 </html>
 """
 
-# =========================
-# SMOOTH JOYSTICK GAME
-# =========================
+# ================= GAME =================
 game_html = """
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smooth Car Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Car Game</title>
 
 <style>
 body{
 margin:0;
 background:#444;
 overflow:hidden;
+touch-action:none;
+position:fixed;
+width:100%;
+height:100%;
 font-family:Arial;
 }
+
+/* MENU */
+#menu{
+position:absolute;
+top:0;left:0;
+width:100%;height:100%;
+background:#111;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+color:white;
+}
+
+.menuBtn{
+width:200px;
+padding:15px;
+margin:10px;
+font-size:18px;
+border:none;
+border-radius:10px;
+background:#0d6efd;
+color:white;
+}
+
+/* GAME */
+#game{display:none;width:100%;height:100%;}
 
 #skor{
 position:absolute;
@@ -63,7 +93,6 @@ font-size:22px;
 z-index:10;
 }
 
-/* ARABA */
 #araba{
 position:absolute;
 bottom:120px;
@@ -73,7 +102,6 @@ height:95px;
 background:red;
 border-radius:10px;
 border:3px solid darkred;
-transition:transform 0.05s linear;
 }
 
 #araba:before{
@@ -97,131 +125,173 @@ border-radius:6px;
 top:-60px;
 }
 
-/* JOYSTICK */
-#joyArea{
+/* BUTTONS */
+#kontroller{
 position:absolute;
-bottom:30px;
-left:30px;
-width:120px;
-height:120px;
-background:rgba(255,255,255,0.1);
-border-radius:50%;
+bottom:25px;
+width:100%;
+display:flex;
+justify-content:space-between;
+padding:0 30px;
 }
 
-#stick{
-position:absolute;
-top:40px;
-left:40px;
-width:40px;
-height:40px;
-background:white;
+.btn{
+width:90px;
+height:90px;
 border-radius:50%;
+border:none;
+font-size:40px;
+background:rgba(255,255,255,0.25);
+color:white;
+}
+
+/* SKIN */
+#skinPanel{
+position:absolute;
+top:60px;
+right:10px;
+background:rgba(0,0,0,0.5);
+padding:10px;
+border-radius:10px;
+}
+.skinBtn{
+display:block;
+margin:5px 0;
+padding:6px;
+border:none;
+color:white;
+}
+
+/* GAME OVER */
+#over{
+display:none;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+color:white;
+text-align:center;
 }
 </style>
 </head>
 
 <body>
 
+<!-- MENU -->
+<div id="menu">
+<h1>🚗 CAR GAME</h1>
+<button class="menuBtn" onclick="start()">BAŞLA</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+
 <div id="skor">SKOR: 0</div>
 <div id="araba"></div>
 
-<div id="joyArea">
-<div id="stick"></div>
+<div id="skinPanel">
+<button onclick="skin('red')" style="background:red;color:white;">Kırmızı</button>
+<button onclick="skin('blue')" style="background:blue;color:white;">Mavi</button>
+<button onclick="skin('green')" style="background:green;color:white;">Yeşil</button>
+</div>
+
+<div id="kontroller">
+<button class="btn" id="left">◀</button>
+<button class="btn" id="right">▶</button>
+</div>
+
+<div id="over">
+<h1>GAME OVER</h1>
+<button onclick="location.reload()">TEKRAR</button>
+</div>
+
 </div>
 
 <script>
 
-let araba = document.getElementById("araba");
-let skorText = document.getElementById("skor");
-let stick = document.getElementById("stick");
-let area = document.getElementById("joyArea");
+let menu=document.getElementById("menu");
+let game=document.getElementById("game");
+let araba=document.getElementById("araba");
+let over=document.getElementById("over");
 
-let targetX = window.innerWidth / 2;
-let posX = targetX;
-let velocity = 0;
+let x=window.innerWidth/2;
+let left=false,right=false;
+let skor=0;
+let dead=false;
 
-let skor = 0;
+/* CALC START */
+function start(){
+menu.style.display="none";
+game.style.display="block";
+}
+
+/* SKIN */
+function skin(c){
+araba.style.background=c;
+}
 
 /* SKOR */
 setInterval(()=>{
+if(dead) return;
+if(game.style.display==="block"){
 skor++;
-skorText.innerHTML = "SKOR: " + skor;
+document.getElementById("skor").innerHTML="SKOR: "+skor;
+}
 },100);
 
 /* ENGEL */
 function engel(){
-let e = document.createElement("div");
-e.className = "engel";
-e.style.left = Math.random() * (window.innerWidth - 60) + "px";
+let e=document.createElement("div");
+e.className="engel";
+e.style.left=Math.random()*(window.innerWidth-60)+"px";
 document.body.appendChild(e);
 
-let y = -50;
+let y=-50;
 
-let move = setInterval(()=>{
+let m=setInterval(()=>{
 
-y += 6;
-e.style.top = y + "px";
+y+=6;
+e.style.top=y+"px";
 
-let a = araba.getBoundingClientRect();
-let b = e.getBoundingClientRect();
+let a=araba.getBoundingClientRect();
+let b=e.getBoundingClientRect();
 
-if(!(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)){
-alert("GAME OVER");
-location.reload();
+if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
+dead=true;
+over.style.display="block";
 }
 
-if(y > window.innerHeight){
+if(y>window.innerHeight){
 e.remove();
-clearInterval(move);
+clearInterval(m);
 }
 
 },20);
 }
 
-setInterval(()=>engel(), 600);
+setInterval(()=>engel(),700);
 
-/* 🔥 SMOOTH PHYSICS LOOP */
+/* CONTROLS */
+document.getElementById("left").addEventListener("touchstart",()=>left=true);
+document.getElementById("left").addEventListener("touchend",()=>left=false);
+
+document.getElementById("right").addEventListener("touchstart",()=>right=true);
+document.getElementById("right").addEventListener("touchend",()=>right=false);
+
+/* MOVE */
 function loop(){
+if(!dead && game.style.display==="block"){
+if(left)x-=7;
+if(right)x+=7;
 
-// easing (çok akıcı geçiş)
-velocity += (targetX - posX) * 0.15;
-velocity *= 0.75;
-posX += velocity;
+if(x<0)x=0;
+if(x>window.innerWidth-60)x=window.innerWidth-60;
 
-araba.style.left = posX + "px";
-
+araba.style.left=x+"px";
+}
 requestAnimationFrame(loop);
 }
 loop();
-
-/* JOYSTICK */
-let active = false;
-
-area.addEventListener("touchstart", ()=> active = true);
-
-area.addEventListener("touchend", ()=>{
-active = false;
-targetX = posX;
-stick.style.left = "40px";
-stick.style.top = "40px";
-});
-
-area.addEventListener("touchmove", (e)=>{
-
-let rect = area.getBoundingClientRect();
-let t = e.touches[0];
-
-let dx = t.clientX - rect.left - 60;
-
-if(dx > 50) dx = 50;
-if(dx < -50) dx = -50;
-
-targetX = window.innerWidth/2 + dx * 6;
-
-// stick hareket
-stick.style.left = (40 + dx) + "px";
-
-});
 
 </script>
 
@@ -229,21 +299,18 @@ stick.style.left = (40 + dx) + "px";
 </html>
 """
 
-# =========================
-# ROUTES
-# =========================
+# ================= ROUTES =================
 @app.route("/", methods=["GET","POST"])
 def login():
-    error = ""
+    error=""
+    if request.method=="POST":
+        u=request.form.get("user")
+        p=request.form.get("pass")
 
-    if request.method == "POST":
-        u = request.form.get("user")
-        p = request.form.get("pass")
-
-        if u == USER and p == PASS:
+        if u==USER and p==PASS:
             return redirect(url_for("game"))
         else:
-            error = "Hatalı giriş!"
+            error="Hatalı giriş!"
 
     return render_template_string(login_html, error=error)
 
@@ -253,9 +320,6 @@ def game():
     return render_template_string(game_html)
 
 
-# =========================
-# RENDER START
-# =========================
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+if __name__=="__main__":
+    port=int(os.environ.get("PORT",10000))
+    app.run(host="0.0.0.0",port=port)
