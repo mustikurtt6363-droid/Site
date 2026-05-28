@@ -3,37 +3,32 @@ import os
 
 app = Flask(__name__)
 
-DOGRU_KULLANICI = "mustafa"
-DOGRU_SIFRE = "kurt"
+USER = "mustafa"
+PASS = "kurt"
 
 # =========================
-# LOGIN EKRANI
+# LOGIN
 # =========================
 login_html = """
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Giriş</title>
-<style>
-body{margin:0;background:#03152d;height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial;}
-.box{width:90%;max-width:400px;background:#13233d;padding:25px;border-radius:20px;color:white;text-align:center;}
-input,button{width:100%;padding:12px;margin-top:10px;border:none;border-radius:10px;}
-button{background:#0d6efd;color:white;font-size:18px;}
-.error{color:red;margin-top:10px;}
-</style>
+<title>Login</title>
 </head>
-<body>
+<body style="margin:0;background:#03152d;color:white;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;">
 
-<div class="box">
-<h2>Giriş Yap</h2>
+<div style="width:90%;max-width:400px;background:#13233d;padding:25px;border-radius:15px;text-align:center;">
+<h2>Giriş</h2>
+
 <form method="POST">
-<input name="kullanici" placeholder="Kullanıcı">
-<input type="password" name="sifre" placeholder="Şifre">
-<button>Giriş</button>
+<input name="user" placeholder="Kullanıcı" style="width:100%;padding:10px;margin:5px 0;"><br>
+<input type="password" name="pass" placeholder="Şifre" style="width:100%;padding:10px;margin:5px 0;"><br>
+<button style="width:100%;padding:10px;background:#0d6efd;color:white;border:none;">Giriş</button>
 </form>
-<p class="error">{{ hata }}</p>
+
+<p style="color:red;">{{ error }}</p>
 </div>
 
 </body>
@@ -41,207 +36,192 @@ button{background:#0d6efd;color:white;font-size:18px;}
 """
 
 # =========================
-# OYUN + HESAP MAKİNESİ (SENİN KODUN)
+# SMOOTH JOYSTICK GAME
 # =========================
-calc_html = """
+game_html = """
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Oyun</title>
+<title>Smooth Car Game</title>
 
 <style>
 body{
 margin:0;
-background:black;
+background:#444;
 overflow:hidden;
 font-family:Arial;
-user-select:none;
-}
-
-.box{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-width:95%;
-max-width:420px;
-background:#111;
-padding:20px;
-border-radius:20px;
-}
-
-input{
-width:100%;
-padding:15px;
-font-size:22px;
-text-align:right;
-border:none;
-border-radius:10px;
-margin-bottom:15px;
-}
-
-.grid{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:8px;
-}
-
-button{
-padding:18px;
-font-size:20px;
-border:none;
-border-radius:10px;
-background:#222;
-color:white;
-}
-
-/* OYUN */
-#oyun{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:#555;
-}
-
-.serit{
-position:absolute;
-left:47%;
-width:20px;
-height:180px;
-background:white;
-animation:yol 1s linear infinite;
-}
-
-@keyframes yol{
-from{transform:translateY(-300px);}
-to{transform:translateY(120vh);}
-}
-
-#araba{
-position:absolute;
-bottom:120px;
-left:45%;
-width:45px;
-height:80px;
-background:red;
-border-radius:10px;
-}
-
-.engel{
-position:absolute;
-width:50px;
-height:20px;
-background:yellow;
-border-radius:6px;
-top:-50px;
 }
 
 #skor{
 position:absolute;
-top:20px;
-left:20px;
+top:10px;
+left:10px;
 color:white;
-font-size:25px;
+font-size:22px;
+z-index:10;
+}
+
+/* ARABA */
+#araba{
+position:absolute;
+bottom:120px;
+left:50%;
+width:55px;
+height:95px;
+background:red;
+border-radius:10px;
+border:3px solid darkred;
+transition:transform 0.05s linear;
+}
+
+#araba:before{
+content:"";
+position:absolute;
+top:10px;
+left:12px;
+width:30px;
+height:20px;
+background:#87ceeb;
+border-radius:5px;
+}
+
+/* ENGEL */
+.engel{
+position:absolute;
+width:55px;
+height:25px;
+background:yellow;
+border-radius:6px;
+top:-60px;
+}
+
+/* JOYSTICK */
+#joyArea{
+position:absolute;
+bottom:30px;
+left:30px;
+width:120px;
+height:120px;
+background:rgba(255,255,255,0.1);
+border-radius:50%;
+}
+
+#stick{
+position:absolute;
+top:40px;
+left:40px;
+width:40px;
+height:40px;
+background:white;
+border-radius:50%;
 }
 </style>
 </head>
 
 <body>
 
-<!-- HESAP MAKİNESİ -->
-<div class="box" id="hesap">
-<h2 style="color:white">Hesap Makinesi</h2>
-
-<input id="ekran">
-
-<div class="grid">
-<button onclick="ekle('7')">7</button>
-<button onclick="ekle('8')">8</button>
-<button onclick="ekle('9')">9</button>
-<button onclick="ekle('/')">/</button>
-
-<button onclick="ekle('4')">4</button>
-<button onclick="ekle('5')">5</button>
-<button onclick="ekle('6')">6</button>
-<button onclick="ekle('*')">*</button>
-
-<button onclick="ekle('1')">1</button>
-<button onclick="ekle('2')">2</button>
-<button onclick="ekle('3')">3</button>
-<button onclick="ekle('-')">-</button>
-
-<button onclick="ekle('0')">0</button>
-<button onclick="ekle('.')">.</button>
-<button onclick="hesapla()">=</button>
-<button onclick="ekle('+')">+</button>
-
-<button onclick="temizle()" style="grid-column:span 4;background:red;">C</button>
-</div>
-</div>
-
-<!-- OYUN -->
-<div id="oyun">
-
-<div class="serit"></div>
-<div class="serit" style="top:-200px;"></div>
-
 <div id="skor">SKOR: 0</div>
-
 <div id="araba"></div>
 
+<div id="joyArea">
+<div id="stick"></div>
 </div>
 
 <script>
 
 let araba = document.getElementById("araba");
 let skorText = document.getElementById("skor");
-let oyun = document.getElementById("oyun");
-let hesap = document.getElementById("hesap");
+let stick = document.getElementById("stick");
+let area = document.getElementById("joyArea");
+
+let targetX = window.innerWidth / 2;
+let posX = targetX;
+let velocity = 0;
 
 let skor = 0;
-let bitti = false;
-let x = window.innerWidth/2;
 
-function ekle(v){
-document.getElementById("ekran").value += v;
-}
-
-function temizle(){
-document.getElementById("ekran").value = "";
-}
-
-function hesapla(){
-let v = document.getElementById("ekran").value;
-
-if(v === "0000"){
-oyunBaslat();
-return;
-}
-
-try{
-document.getElementById("ekran").value = eval(v);
-}catch{
-document.getElementById("ekran").value = "ERROR";
-}
-}
-
-function oyunBaslat(){
-hesap.style.display = "none";
-oyun.style.display = "block";
-
+/* SKOR */
 setInterval(()=>{
-if(bitti) return;
-
 skor++;
 skorText.innerHTML = "SKOR: " + skor;
-
 },100);
+
+/* ENGEL */
+function engel(){
+let e = document.createElement("div");
+e.className = "engel";
+e.style.left = Math.random() * (window.innerWidth - 60) + "px";
+document.body.appendChild(e);
+
+let y = -50;
+
+let move = setInterval(()=>{
+
+y += 6;
+e.style.top = y + "px";
+
+let a = araba.getBoundingClientRect();
+let b = e.getBoundingClientRect();
+
+if(!(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)){
+alert("GAME OVER");
+location.reload();
 }
+
+if(y > window.innerHeight){
+e.remove();
+clearInterval(move);
+}
+
+},20);
+}
+
+setInterval(()=>engel(), 600);
+
+/* 🔥 SMOOTH PHYSICS LOOP */
+function loop(){
+
+// easing (çok akıcı geçiş)
+velocity += (targetX - posX) * 0.15;
+velocity *= 0.75;
+posX += velocity;
+
+araba.style.left = posX + "px";
+
+requestAnimationFrame(loop);
+}
+loop();
+
+/* JOYSTICK */
+let active = false;
+
+area.addEventListener("touchstart", ()=> active = true);
+
+area.addEventListener("touchend", ()=>{
+active = false;
+targetX = posX;
+stick.style.left = "40px";
+stick.style.top = "40px";
+});
+
+area.addEventListener("touchmove", (e)=>{
+
+let rect = area.getBoundingClientRect();
+let t = e.touches[0];
+
+let dx = t.clientX - rect.left - 60;
+
+if(dx > 50) dx = 50;
+if(dx < -50) dx = -50;
+
+targetX = window.innerWidth/2 + dx * 6;
+
+// stick hareket
+stick.style.left = (40 + dx) + "px";
+
+});
 
 </script>
 
@@ -254,25 +234,28 @@ skorText.innerHTML = "SKOR: " + skor;
 # =========================
 @app.route("/", methods=["GET","POST"])
 def login():
-    hata = ""
+    error = ""
 
     if request.method == "POST":
-        k = request.form.get("kullanici")
-        s = request.form.get("sifre")
+        u = request.form.get("user")
+        p = request.form.get("pass")
 
-        if k == DOGRU_KULLANICI and s == DOGRU_SIFRE:
-            return redirect(url_for("calc"))
+        if u == USER and p == PASS:
+            return redirect(url_for("game"))
         else:
-            hata = "Hatalı giriş!"
+            error = "Hatalı giriş!"
 
-    return render_template_string(login_html, hata=hata)
-
-
-@app.route("/calc")
-def calc():
-    return render_template_string(calc_html)
+    return render_template_string(login_html, error=error)
 
 
+@app.route("/game")
+def game():
+    return render_template_string(game_html)
+
+
+# =========================
+# RENDER START
+# =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
