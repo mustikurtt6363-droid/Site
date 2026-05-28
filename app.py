@@ -56,8 +56,8 @@ font-size:18px;
 <div class="box">
 <h2>Giriş</h2>
 <form method="POST">
-<input name="user">
-<input type="password" name="pass">
+<input name="user" placeholder="Kullanıcı">
+<input type="password" name="pass" placeholder="Şifre">
 <button>Giriş</button>
 </form>
 <p class="error">{{error}}</p>
@@ -66,7 +66,7 @@ font-size:18px;
 </html>
 """
 
-# ================= GAME =================
+# ================= GAME + CALC =================
 game_html = """
 <!DOCTYPE html>
 <html>
@@ -86,10 +86,11 @@ overflow:hidden;
 background:#444;
 touch-action:none;
 user-select:none;
+font-family:Arial;
 position:fixed;
 }
 
-/* CALC */
+/* LOGIN -> GAME AREA */
 #calc{
 position:absolute;
 top:50%;
@@ -138,7 +139,6 @@ top:10px;
 left:10px;
 color:white;
 font-size:22px;
-z-index:10;
 }
 
 #araba{
@@ -150,6 +150,17 @@ height:95px;
 background:red;
 border-radius:10px;
 border:3px solid darkred;
+}
+
+#araba:before{
+content:"";
+position:absolute;
+top:10px;
+left:12px;
+width:30px;
+height:20px;
+background:#87ceeb;
+border-radius:5px;
 }
 
 /* ENGEL */
@@ -164,12 +175,11 @@ top:-60px;
 /* CONTROLS */
 #kontroller{
 position:absolute;
-bottom:30px;
+bottom:25px;
 width:100%;
 display:flex;
 justify-content:space-between;
 padding:0 30px;
-box-sizing:border-box;
 }
 
 .btn{
@@ -177,7 +187,7 @@ width:80px;
 height:80px;
 border-radius:50%;
 border:none;
-font-size:34px;
+font-size:35px;
 background:rgba(255,255,255,0.25);
 color:white;
 }
@@ -191,7 +201,6 @@ left:50%;
 transform:translate(-50%,-50%);
 color:white;
 text-align:center;
-z-index:50;
 }
 </style>
 </head>
@@ -326,7 +335,7 @@ clearInterval(m);
 
 setInterval(spawn,750);
 
-/* CONTROLS FIX */
+/* CONTROLS */
 function hold(btn,dir){
 btn.addEventListener("touchstart",(e)=>{e.preventDefault(); if(dir==="l")left=true; else right=true;});
 btn.addEventListener("touchend",(e)=>{e.preventDefault(); if(dir==="l")left=false; else right=false;});
@@ -335,7 +344,7 @@ btn.addEventListener("touchend",(e)=>{e.preventDefault(); if(dir==="l")left=fals
 hold(document.getElementById("left"),"l");
 hold(document.getElementById("right"),"r");
 
-/* SMOOTH MOVE */
+/* MOVE */
 function loop(){
 if(game.style.display==="block"){
 if(left)x-=7;
@@ -362,15 +371,16 @@ def login():
     if request.method=="POST":
         u=request.form.get("user")
         p=request.form.get("pass")
+
         if u==USER and p==PASS:
             return redirect(url_for("game"))
         error="Hatalı giriş"
     return render_template_string(login_html,error=error)
 
 @app.route("/game")
-def game_route():
+def game():
     return render_template_string(game_html)
 
 if __name__=="__main__":
     port=int(os.environ.get("PORT",10000))
-    app.run(host="0.0.0.0",port=port
+    app.run(host="0.0.0.0",port=port)
