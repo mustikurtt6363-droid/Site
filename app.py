@@ -3,8 +3,7 @@ import os
 
 app = Flask(__name__)
 
-USER = "mustafa"
-PASS = "kurt"
+USER = "Musti"
 
 # ================= LOGIN =================
 login_html = """
@@ -13,7 +12,7 @@ login_html = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login</title>
+<title>Giriş</title>
 <style>
 body{
 margin:0;
@@ -21,13 +20,13 @@ height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-background:#03152d;
+background:#0b1a2b;
 font-family:Arial;
 }
 
 .box{
 width:90%;
-max-width:380px;
+max-width:360px;
 background:#13233d;
 padding:25px;
 border-radius:20px;
@@ -53,20 +52,23 @@ font-size:18px;
 </style>
 </head>
 <body>
+
 <div class="box">
 <h2>Giriş</h2>
+
 <form method="POST">
-<input name="user" placeholder="Kullanıcı">
-<input type="password" name="pass" placeholder="Şifre">
+<input name="user" placeholder="Kullanıcı adı">
 <button>Giriş</button>
 </form>
+
 <p class="error">{{error}}</p>
 </div>
+
 </body>
 </html>
 """
 
-# ================= GAME + CALC =================
+# ================= CALC + GAME =================
 game_html = """
 <!DOCTYPE html>
 <html>
@@ -74,7 +76,7 @@ game_html = """
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>Game</title>
+<title>System</title>
 
 <style>
 html,body{
@@ -83,14 +85,14 @@ padding:0;
 width:100%;
 height:100%;
 overflow:hidden;
-background:#444;
+background:#333;
+font-family:Arial;
 touch-action:none;
 user-select:none;
-font-family:Arial;
 position:fixed;
 }
 
-/* LOGIN -> GAME AREA */
+/* ================= CALC ================= */
 #calc{
 position:absolute;
 top:50%;
@@ -121,9 +123,10 @@ padding:15px;
 border:none;
 background:#222;
 color:white;
+font-size:18px;
 }
 
-/* GAME */
+/* ================= GAME ================= */
 #game{
 display:none;
 position:fixed;
@@ -131,9 +134,58 @@ top:0;
 left:0;
 width:100%;
 height:100%;
+background:#555;
 }
 
-#skor{
+/* ROAD */
+.road{
+position:absolute;
+left:50%;
+transform:translateX(-50%);
+width:140px;
+height:100%;
+background:#2b2b2b;
+}
+
+/* LINES */
+.line{
+position:absolute;
+left:50%;
+transform:translateX(-50%);
+width:6px;
+height:80px;
+background:white;
+animation:move 1s linear infinite;
+}
+
+@keyframes move{
+0%{top:-100px;}
+100%{top:120vh;}
+}
+
+/* CAR */
+#car{
+position:absolute;
+bottom:120px;
+left:50%;
+width:50px;
+height:90px;
+background:red;
+border-radius:8px;
+}
+
+/* ENEMY */
+.enemy{
+position:absolute;
+width:50px;
+height:90px;
+background:yellow;
+top:-120px;
+border-radius:8px;
+}
+
+/* SCORE */
+#score{
 position:absolute;
 top:10px;
 left:10px;
@@ -141,55 +193,27 @@ color:white;
 font-size:22px;
 }
 
-#araba{
+/* CONTROLS (BOTTOM FIXED) */
+#controls{
 position:absolute;
-bottom:120px;
-left:50%;
-width:55px;
-height:95px;
-background:red;
-border-radius:10px;
-border:3px solid darkred;
-}
-
-#araba:before{
-content:"";
-position:absolute;
-top:10px;
-left:12px;
-width:30px;
-height:20px;
-background:#87ceeb;
-border-radius:5px;
-}
-
-/* ENGEL */
-.engel{
-position:absolute;
-width:55px;
-height:25px;
-background:yellow;
-top:-60px;
-}
-
-/* CONTROLS */
-#kontroller{
-position:absolute;
-bottom:25px;
+bottom:0;
+left:0;
 width:100%;
 display:flex;
 justify-content:space-between;
-padding:0 30px;
+padding:15px 25px;
+box-sizing:border-box;
 }
 
 .btn{
-width:80px;
-height:80px;
+width:90px;
+height:90px;
 border-radius:50%;
 border:none;
-font-size:35px;
 background:rgba(255,255,255,0.25);
 color:white;
+font-size:40px;
+touch-action:none;
 }
 
 /* GAME OVER */
@@ -207,7 +231,7 @@ text-align:center;
 
 <body>
 
-<!-- CALC -->
+<!-- ================= CALC ================= -->
 <div id="calc">
 <input id="ekran">
 
@@ -228,25 +252,27 @@ text-align:center;
 <button onclick="add('+')">+</button>
 
 <button onclick="add('0')">0</button>
-<button onclick="calc()">=</button>
+<button onclick="run()">ENTER</button>
 <button onclick="clearE()" style="grid-column:span 2;background:red;">C</button>
 </div>
 </div>
 
-<!-- GAME -->
+<!-- ================= GAME ================= -->
 <div id="game">
 
-<div id="skor">0</div>
-<div id="araba"></div>
+<div class="road"></div>
 
-<div id="kontroller">
+<div id="score">0</div>
+<div id="car"></div>
+
+<div id="controls">
 <button class="btn" id="left">◀</button>
 <button class="btn" id="right">▶</button>
 </div>
 
 <div id="over">
 <h1>GAME OVER</h1>
-<button onclick="location.reload()">TEKRAR</button>
+<button onclick="location.reload()">RESTART</button>
 </div>
 
 </div>
@@ -262,10 +288,10 @@ function clearE(){
 document.getElementById("ekran").value="";
 }
 
-function calc(){
+function run(){
 let v=document.getElementById("ekran").value;
 
-if(v==="0000"){
+if(v==="2727"){
 startGame();
 return;
 }
@@ -277,47 +303,46 @@ document.getElementById("ekran").value="ERROR";
 }
 }
 
-/* SWITCH */
-let calcBox=document.getElementById("calc");
-let game=document.getElementById("game");
-
-function startGame(){
-calcBox.style.display="none";
-game.style.display="block";
-}
-
 /* GAME */
-let araba=document.getElementById("araba");
+let calc=document.getElementById("calc");
+let game=document.getElementById("game");
+let car=document.getElementById("car");
 let over=document.getElementById("over");
 
 let x=window.innerWidth/2;
 let left=false,right=false;
 let dead=false;
-let skor=0;
+let score=0;
+
+/* START */
+function startGame(){
+calc.style.display="none";
+game.style.display="block";
+}
 
 /* SCORE */
 setInterval(()=>{
-if(!dead && game.style.display==="block"){
-skor++;
-document.getElementById("skor").innerText=skor;
+if(game.style.display==="block" && !dead){
+score++;
+document.getElementById("score").innerText=score;
 }
 },100);
 
 /* ENEMY */
 function spawn(){
 let e=document.createElement("div");
-e.className="engel";
+e.className="enemy";
 e.style.left=Math.random()*(window.innerWidth-60)+"px";
 document.body.appendChild(e);
 
-let y=-50;
+let y=-120;
 
 let m=setInterval(()=>{
 
 y+=6;
 e.style.top=y+"px";
 
-let a=araba.getBoundingClientRect();
+let a=car.getBoundingClientRect();
 let b=e.getBoundingClientRect();
 
 if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
@@ -332,28 +357,36 @@ clearInterval(m);
 
 },20);
 }
+setInterval(spawn,800);
 
-setInterval(spawn,750);
-
-/* CONTROLS */
+/* CONTROLS (HOLD SMOOTH) */
 function hold(btn,dir){
-btn.addEventListener("touchstart",(e)=>{e.preventDefault(); if(dir==="l")left=true; else right=true;});
-btn.addEventListener("touchend",(e)=>{e.preventDefault(); if(dir==="l")left=false; else right=false;});
+btn.addEventListener("touchstart",(e)=>{
+e.preventDefault();
+if(dir==="l")left=true;
+else right=true;
+});
+
+btn.addEventListener("touchend",(e)=>{
+e.preventDefault();
+if(dir==="l")left=false;
+else right=false;
+});
 }
 
 hold(document.getElementById("left"),"l");
 hold(document.getElementById("right"),"r");
 
-/* MOVE */
+/* MOVE LOOP */
 function loop(){
 if(game.style.display==="block"){
 if(left)x-=7;
 if(right)x+=7;
 
-if(x<10)x=10;
+if(x<20)x=20;
 if(x>window.innerWidth-70)x=window.innerWidth-70;
 
-araba.style.left=x+"px";
+car.style.left=x+"px";
 }
 requestAnimationFrame(loop);
 }
@@ -365,16 +398,18 @@ loop();
 </html>
 """
 
+# ================= ROUTES =================
 @app.route("/", methods=["GET","POST"])
 def login():
     error=""
     if request.method=="POST":
         u=request.form.get("user")
-        p=request.form.get("pass")
 
-        if u==USER and p==PASS:
+        if u=="Musti":
             return redirect(url_for("game"))
-        error="Hatalı giriş"
+        else:
+            error="Hatalı kullanıcı adı"
+
     return render_template_string(login_html,error=error)
 
 @app.route("/game")
