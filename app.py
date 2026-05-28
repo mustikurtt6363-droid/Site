@@ -1,122 +1,117 @@
-from flask import Flask, request, render_template_string, redirect, url_for
+from flask import Flask, request, redirect, url_for, render_template_string
 import os
 
 app = Flask(__name__)
 
-DOGRU_KULLANICI = "mustafa"
-DOGRU_SIFRE = "kurt"
+USER = "mustafa"
+PASS = "kurt"
 
-# =========================
-# GİRİŞ SAYFASI
-# =========================
+# ---------------- LOGIN ----------------
 login_html = """
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Giriş</title>
-<style>
-body{margin:0;font-family:Arial;background:#03152d;display:flex;justify-content:center;align-items:center;height:100vh;}
-.box{background:#13233d;padding:25px;border-radius:15px;width:90%;max-width:400px;color:white;text-align:center;}
-input,button{width:100%;padding:12px;margin-top:10px;border:none;border-radius:8px;}
-button{background:#0d6efd;color:white;font-size:16px;}
-.error{color:red;margin-top:10px;}
-</style>
 </head>
-<body>
+<body style="background:#03152d;color:white;text-align:center;padding-top:100px;">
 
-<div class="box">
 <h2>Giriş Yap</h2>
 
 <form method="POST">
-<input name="kullanici" placeholder="Kullanıcı">
-<input type="password" name="sifre" placeholder="Şifre">
-<button type="submit">Giriş</button>
+<input name="user" placeholder="Kullanıcı"><br><br>
+<input name="pass" type="password" placeholder="Şifre"><br><br>
+<button>Giriş</button>
 </form>
 
-<p class="error">{{ hata }}</p>
-</div>
+<p style="color:red;">{{ error }}</p>
 
 </body>
 </html>
 """
 
-# =========================
-# OYUN + HESAP MAKİNESİ
-# =========================
+# ---------------- CALCULATOR ----------------
 calc_html = """
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Oyun</title>
-<style>
-body{margin:0;background:black;color:white;font-family:Arial;text-align:center;}
-#box{margin-top:50px;}
-input{padding:10px;font-size:20px;width:80%;}
-button{padding:10px;margin:5px;font-size:18px;}
-</style>
+<title>Hesap Makinesi</title>
 </head>
-<body>
+<body style="background:black;color:white;text-align:center;padding-top:50px;">
 
-<div id="box">
 <h2>Hesap Makinesi</h2>
 
-<input id="ekran">
+<input id="ekran" style="font-size:20px;padding:10px;width:200px;"><br><br>
 
 <br>
 
+<button onclick="ekle('7')">7</button>
+<button onclick="ekle('8')">8</button>
+<button onclick="ekle('9')">9</button>
+<button onclick="ekle('/')">/</button><br>
+
+<button onclick="ekle('4')">4</button>
+<button onclick="ekle('5')">5</button>
+<button onclick="ekle('6')">6</button>
+<button onclick="ekle('*')">*</button><br>
+
 <button onclick="ekle('1')">1</button>
 <button onclick="ekle('2')">2</button>
-<button onclick="ekle('+')">+</button>
+<button onclick="ekle('3')">3</button>
+<button onclick="ekle('-')">-</button><br>
+
+<button onclick="ekle('0')">0</button>
+<button onclick="ekle('.')">.</button>
 <button onclick="hesapla()">=</button>
+<button onclick="ekle('+')">+</button><br><br>
+
+<button onclick="temizle()">C</button>
 
 <script>
 function ekle(x){
 document.getElementById("ekran").value += x;
 }
 
+function temizle(){
+document.getElementById("ekran").value = "";
+}
+
 function hesapla(){
 let v = document.getElementById("ekran").value;
 
-if(v == "0000"){
-alert("Gizli oyun açılıyor!");
+if(v === "0000"){
+alert("Gizli mod açıldı!");
 return;
 }
 
 try{
 document.getElementById("ekran").value = eval(v);
 }catch{
-document.getElementById("ekran").value = "HATA";
+document.getElementById("ekran").value = "ERROR";
 }
 }
 </script>
-
-</div>
 
 </body>
 </html>
 """
 
-# =========================
-# ROUTES
-# =========================
+# ---------------- ROUTES ----------------
 @app.route("/", methods=["GET","POST"])
 def login():
-    hata = ""
+    error = ""
 
     if request.method == "POST":
-        k = request.form.get("kullanici")
-        s = request.form.get("sifre")
+        u = request.form.get("user")
+        p = request.form.get("pass")
 
-        if k == DOGRU_KULLANICI and s == DOGRU_SIFRE:
+        if u == USER and p == PASS:
             return redirect(url_for("calc"))
         else:
-            hata = "Hatalı giriş!"
+            error = "Hatalı giriş!"
 
-    return render_template_string(login_html, hata=hata)
+    return render_template_string(login_html, error=error)
 
 
 @app.route("/calc")
@@ -124,9 +119,7 @@ def calc():
     return render_template_string(calc_html)
 
 
-# =========================
-# RENDER UYUMLU START
-# =========================
+# ---------------- RENDER ----------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
