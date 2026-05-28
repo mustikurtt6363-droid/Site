@@ -15,10 +15,40 @@ login_html = """
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login</title>
 <style>
-body{margin:0;background:#03152d;height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial;}
-.box{width:90%;max-width:400px;background:#13233d;padding:25px;border-radius:20px;color:white;text-align:center;}
-input,button{width:100%;padding:12px;margin-top:10px;border:none;border-radius:10px;}
-button{background:#0d6efd;color:white;font-size:18px;}
+body{
+margin:0;
+background:#03152d;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+font-family:Arial;
+}
+
+.box{
+width:90%;
+max-width:400px;
+background:#13233d;
+padding:25px;
+border-radius:20px;
+color:white;
+text-align:center;
+}
+
+input,button{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:10px;
+}
+
+button{
+background:#0d6efd;
+color:white;
+font-size:18px;
+}
+
 .error{color:red;margin-top:10px;}
 </style>
 </head>
@@ -26,8 +56,8 @@ button{background:#0d6efd;color:white;font-size:18px;}
 <div class="box">
 <h2>Giriş</h2>
 <form method="POST">
-<input name="user">
-<input type="password" name="pass">
+<input name="user" placeholder="Kullanıcı">
+<input type="password" name="pass" placeholder="Şifre">
 <button>Giriş</button>
 </form>
 <p class="error">{{ error }}</p>
@@ -43,47 +73,68 @@ game_html = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Car Game</title>
 
 <style>
-body{
+
+/* GENEL */
+html,body{
 margin:0;
-background:#444;
-overflow:hidden;
-touch-action:none;
-position:fixed;
+padding:0;
 width:100%;
 height:100%;
+overflow:hidden;
+background:#444;
 font-family:Arial;
+touch-action:none;
+position:fixed;
 }
 
-/* MENU */
-#menu{
+/* ================= CALC ================= */
+#calc{
 position:absolute;
-top:0;left:0;
-width:100%;height:100%;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:90%;
+max-width:380px;
 background:#111;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-color:white;
+padding:20px;
+border-radius:15px;
 }
 
-.menuBtn{
-width:200px;
+#ekran{
+width:100%;
 padding:15px;
-margin:10px;
-font-size:18px;
+font-size:22px;
+text-align:right;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:6px;
+}
+
+.grid button{
+padding:15px;
 border:none;
-border-radius:10px;
-background:#0d6efd;
+background:#222;
 color:white;
 }
 
-/* GAME */
-#game{display:none;width:100%;height:100%;}
+/* ================= GAME ================= */
+#game{
+display:none;
+width:100%;
+height:100%;
+position:fixed;
+top:0;
+left:0;
+}
 
+/* SKOR */
 #skor{
 position:absolute;
 top:10px;
@@ -93,6 +144,7 @@ font-size:22px;
 z-index:10;
 }
 
+/* ARABA */
 #araba{
 position:absolute;
 bottom:120px;
@@ -125,41 +177,45 @@ border-radius:6px;
 top:-60px;
 }
 
-/* BUTTONS */
+/* CONTROLS */
 #kontroller{
 position:absolute;
 bottom:25px;
 width:100%;
 display:flex;
 justify-content:space-between;
-padding:0 30px;
+padding:0 20px;
 }
 
 .btn{
-width:90px;
-height:90px;
+width:85px;
+height:85px;
 border-radius:50%;
 border:none;
-font-size:40px;
+font-size:36px;
 background:rgba(255,255,255,0.25);
 color:white;
 }
 
-/* SKIN */
+/* SKIN PANEL (İÇERİ ALINDI) */
 #skinPanel{
 position:absolute;
 top:60px;
-right:10px;
+right:15px;
 background:rgba(0,0,0,0.5);
-padding:10px;
+padding:8px;
 border-radius:10px;
+z-index:20;
+max-width:110px;
 }
+
 .skinBtn{
 display:block;
-margin:5px 0;
+margin:4px 0;
 padding:6px;
 border:none;
 color:white;
+font-size:12px;
 }
 
 /* GAME OVER */
@@ -171,28 +227,52 @@ left:50%;
 transform:translate(-50%,-50%);
 color:white;
 text-align:center;
+z-index:50;
 }
 </style>
 </head>
 
 <body>
 
-<!-- MENU -->
-<div id="menu">
-<h1>🚗 CAR GAME</h1>
-<button class="menuBtn" onclick="start()">BAŞLA</button>
+<!-- ================= CALC ================= -->
+<div id="calc">
+<input id="ekran">
+
+<div class="grid">
+<button onclick="add('7')">7</button>
+<button onclick="add('8')">8</button>
+<button onclick="add('9')">9</button>
+<button onclick="add('/')">/</button>
+
+<button onclick="add('4')">4</button>
+<button onclick="add('5')">5</button>
+<button onclick="add('6')">6</button>
+<button onclick="add('*')">*</button>
+
+<button onclick="add('1')">1</button>
+<button onclick="add('2')">2</button>
+<button onclick="add('3')">3</button>
+<button onclick="add('-')">-</button>
+
+<button onclick="add('0')">0</button>
+<button onclick="add('.')">.</button>
+<button onclick="calc()">=</button>
+<button onclick="add('+')">+</button>
+
+<button onclick="clearE()" style="grid-column:span 4;background:red;">C</button>
+</div>
 </div>
 
-<!-- GAME -->
+<!-- ================= GAME ================= -->
 <div id="game">
 
 <div id="skor">SKOR: 0</div>
 <div id="araba"></div>
 
 <div id="skinPanel">
-<button onclick="skin('red')" style="background:red;color:white;">Kırmızı</button>
-<button onclick="skin('blue')" style="background:blue;color:white;">Mavi</button>
-<button onclick="skin('green')" style="background:green;color:white;">Yeşil</button>
+<button class="skinBtn" style="background:red" onclick="skin('red')">K</button>
+<button class="skinBtn" style="background:blue" onclick="skin('blue')">M</button>
+<button class="skinBtn" style="background:green" onclick="skin('green')">Y</button>
 </div>
 
 <div id="kontroller">
@@ -209,7 +289,30 @@ text-align:center;
 
 <script>
 
-let menu=document.getElementById("menu");
+/* CALC */
+function add(v){
+document.getElementById("ekran").value += v;
+}
+
+function clearE(){
+document.getElementById("ekran").value="";
+}
+
+function calc(){
+let v=document.getElementById("ekran").value;
+if(v==="0000"){
+start();
+return;
+}
+try{
+document.getElementById("ekran").value=eval(v);
+}catch{
+document.getElementById("ekran").value="ERROR";
+}
+}
+
+/* GAME */
+let calcBox=document.getElementById("calc");
 let game=document.getElementById("game");
 let araba=document.getElementById("araba");
 let over=document.getElementById("over");
@@ -219,9 +322,9 @@ let left=false,right=false;
 let skor=0;
 let dead=false;
 
-/* CALC START */
+/* START */
 function start(){
-menu.style.display="none";
+calcBox.style.display="none";
 game.style.display="block";
 }
 
