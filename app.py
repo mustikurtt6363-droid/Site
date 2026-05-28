@@ -3,9 +3,10 @@ import os
 
 app = Flask(__name__)
 
-USER="mustafa"
-PASS="kurt"
+USER = "mustafa"
+PASS = "kurt"
 
+# ================= LOGIN =================
 login_html = """
 <!DOCTYPE html>
 <html>
@@ -14,10 +15,40 @@ login_html = """
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login</title>
 <style>
-body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;background:#03152d;font-family:Arial;}
-.box{width:90%;max-width:400px;background:#13233d;padding:25px;border-radius:20px;color:white;text-align:center;}
-input,button{width:100%;padding:12px;margin-top:10px;border:none;border-radius:10px;}
-button{background:#0d6efd;color:white;font-size:18px;}
+body{
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:#03152d;
+font-family:Arial;
+}
+
+.box{
+width:90%;
+max-width:380px;
+background:#13233d;
+padding:25px;
+border-radius:20px;
+color:white;
+text-align:center;
+}
+
+input,button{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:10px;
+}
+
+button{
+background:#0d6efd;
+color:white;
+font-size:18px;
+}
+
 .error{color:red;margin-top:10px;}
 </style>
 </head>
@@ -35,6 +66,7 @@ button{background:#0d6efd;color:white;font-size:18px;}
 </html>
 """
 
+# ================= GAME =================
 game_html = """
 <!DOCTYPE html>
 <html>
@@ -48,27 +80,34 @@ game_html = """
 html,body{
 margin:0;
 padding:0;
-overflow:hidden;
 width:100%;
 height:100%;
+overflow:hidden;
 background:#444;
 touch-action:none;
 user-select:none;
+position:fixed;
 }
 
+/* CALC */
 #calc{
 position:absolute;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
 width:90%;
-max-width:380px;
+max-width:360px;
 background:#111;
 padding:20px;
 border-radius:15px;
 }
 
-#ekran{width:100%;padding:15px;font-size:22px;text-align:right;}
+#ekran{
+width:100%;
+padding:15px;
+font-size:22px;
+text-align:right;
+}
 
 .grid{
 display:grid;
@@ -87,8 +126,10 @@ color:white;
 #game{
 display:none;
 position:fixed;
-top:0;left:0;
-width:100%;height:100%;
+top:0;
+left:0;
+width:100%;
+height:100%;
 }
 
 #skor{
@@ -108,17 +149,7 @@ width:55px;
 height:95px;
 background:red;
 border-radius:10px;
-}
-
-#araba:before{
-content:"";
-position:absolute;
-top:10px;
-left:12px;
-width:30px;
-height:20px;
-background:#87ceeb;
-border-radius:5px;
+border:3px solid darkred;
 }
 
 /* ENGEL */
@@ -130,14 +161,14 @@ background:yellow;
 top:-60px;
 }
 
-/* CONTROLS (İÇERİ ALINDI) */
+/* CONTROLS */
 #kontroller{
 position:absolute;
-bottom:40px;
+bottom:30px;
 width:100%;
 display:flex;
 justify-content:space-between;
-padding:0 40px;
+padding:0 30px;
 box-sizing:border-box;
 }
 
@@ -146,13 +177,12 @@ width:80px;
 height:80px;
 border-radius:50%;
 border:none;
-font-size:35px;
+font-size:34px;
 background:rgba(255,255,255,0.25);
 color:white;
-touch-action:none;
-user-select:none;
 }
 
+/* GAME OVER */
 #over{
 display:none;
 position:absolute;
@@ -161,6 +191,7 @@ left:50%;
 transform:translate(-50%,-50%);
 color:white;
 text-align:center;
+z-index:50;
 }
 </style>
 </head>
@@ -224,14 +255,29 @@ document.getElementById("ekran").value="";
 
 function calc(){
 let v=document.getElementById("ekran").value;
-if(v==="0000"){ start(); return; }
-try{document.getElementById("ekran").value=eval(v);}
-catch{document.getElementById("ekran").value="ERROR";}
+
+if(v==="0000"){
+startGame();
+return;
+}
+
+try{
+document.getElementById("ekran").value=eval(v);
+}catch{
+document.getElementById("ekran").value="ERROR";
+}
+}
+
+/* SWITCH */
+let calcBox=document.getElementById("calc");
+let game=document.getElementById("game");
+
+function startGame(){
+calcBox.style.display="none";
+game.style.display="block";
 }
 
 /* GAME */
-let calcBox=document.getElementById("calc");
-let game=document.getElementById("game");
 let araba=document.getElementById("araba");
 let over=document.getElementById("over");
 
@@ -240,13 +286,7 @@ let left=false,right=false;
 let dead=false;
 let skor=0;
 
-/* START */
-function start(){
-calcBox.style.display="none";
-game.style.display="block";
-}
-
-/* SKOR */
+/* SCORE */
 setInterval(()=>{
 if(!dead && game.style.display==="block"){
 skor++;
@@ -254,8 +294,8 @@ document.getElementById("skor").innerText=skor;
 }
 },100);
 
-/* ENGEL */
-function engel(){
+/* ENEMY */
+function spawn(){
 let e=document.createElement("div");
 e.className="engel";
 e.style.left=Math.random()*(window.innerWidth-60)+"px";
@@ -264,8 +304,6 @@ document.body.appendChild(e);
 let y=-50;
 
 let m=setInterval(()=>{
-
-if(game.style.display==="none") return;
 
 y+=6;
 e.style.top=y+"px";
@@ -285,18 +323,19 @@ clearInterval(m);
 
 },20);
 }
-setInterval(()=>engel(),700);
 
-/* CONTROLS (TAKILMA FIX) */
+setInterval(spawn,750);
+
+/* CONTROLS FIX */
 function hold(btn,dir){
-btn.addEventListener("touchstart",(e)=>{e.preventDefault(); if(dir==="l") left=true; else right=true;});
-btn.addEventListener("touchend",(e)=>{e.preventDefault(); if(dir==="l") left=false; else right=false;});
+btn.addEventListener("touchstart",(e)=>{e.preventDefault(); if(dir==="l")left=true; else right=true;});
+btn.addEventListener("touchend",(e)=>{e.preventDefault(); if(dir==="l")left=false; else right=false;});
 }
 
 hold(document.getElementById("left"),"l");
 hold(document.getElementById("right"),"r");
 
-/* MOVE (SMOOTH) */
+/* SMOOTH MOVE */
 function loop(){
 if(game.style.display==="block"){
 if(left)x-=7;
@@ -334,4 +373,4 @@ def game_route():
 
 if __name__=="__main__":
     port=int(os.environ.get("PORT",10000))
-    app.run(host="0.0.0.0",port=port)
+    app.run(host="0.0.0.0",port=port
