@@ -1,80 +1,15 @@
-from flask import Flask, request, render_template_string, redirect, url_for
+from flask import Flask, render_template_string
 import os
 
 app = Flask(__name__)
 
-# ================= LOGIN =================
-login_html = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login</title>
-<style>
-body{
-margin:0;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:#0b1a2b;
-font-family:Arial;
-}
-
-.box{
-width:90%;
-max-width:360px;
-background:#13233d;
-padding:25px;
-border-radius:20px;
-color:white;
-text-align:center;
-}
-
-input,button{
-width:100%;
-padding:12px;
-margin-top:10px;
-border:none;
-border-radius:10px;
-}
-
-button{
-background:#0d6efd;
-color:white;
-font-size:18px;
-}
-
-.error{color:red;margin-top:10px;}
-</style>
-</head>
-<body>
-
-<div class="box">
-<h2>Giriş Sistemi</h2>
-
-<form method="POST">
-<input name="user" placeholder="Kullanıcı adı">
-<button>Giriş</button>
-</form>
-
-<p class="error">{{error}}</p>
-
-</div>
-
-</body>
-</html>
-"""
-
-# ================= GAME =================
-game_html = """
+html = """
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Game</title>
+<title>Car Game</title>
 
 <style>
 html,body{
@@ -85,16 +20,37 @@ height:100%;
 overflow:hidden;
 font-family:Arial;
 background:#222;
+position:fixed;
 touch-action:none;
 user-select:none;
+}
+
+/* ================= LOGIN ================= */
+#login{
 position:fixed;
+inset:0;
+display:flex;
+justify-content:center;
+align-items:center;
+background:#0b1a2b;
+z-index:100;
+}
+
+.loginBox{
+width:90%;
+max-width:360px;
+background:#13233d;
+padding:25px;
+border-radius:20px;
+color:white;
+text-align:center;
 }
 
 /* ================= CALC ================= */
 #calc{
 position:fixed;
 inset:0;
-display:flex;
+display:none;
 justify-content:center;
 align-items:center;
 background:#111;
@@ -103,7 +59,7 @@ z-index:10;
 
 #box{
 width:92%;
-max-width:360px;
+max-width:380px;
 background:#222;
 padding:20px;
 border-radius:15px;
@@ -180,12 +136,21 @@ background:yellow;
 top:-120px;
 }
 
+.coin{
+position:absolute;
+width:25px;
+height:25px;
+border-radius:50%;
+background:gold;
+top:-50px;
+}
+
 #score{
 position:absolute;
 top:10px;
 left:10px;
 color:white;
-font-size:22px;
+font-size:18px;
 z-index:5;
 }
 
@@ -197,7 +162,7 @@ left:0;
 width:100%;
 display:flex;
 justify-content:space-between;
-padding:0 35px;
+padding:0 30px;
 box-sizing:border-box;
 }
 
@@ -227,23 +192,17 @@ z-index:100;
 
 <body>
 
-<!-- ================= LOGIN ================= -->
-<div id="login" style="position:fixed;inset:0;display:flex;justify-content:center;align-items:center;background:#0b1a2b;z-index:20;">
-<div style="width:90%;max-width:360px;background:#13233d;padding:25px;border-radius:20px;text-align:center;color:white;">
+<!-- LOGIN -->
+<div id="login">
+<div class="loginBox">
 <h2>Giriş</h2>
-
-<form method="POST">
-<input name="user" style="width:100%;padding:12px;border:none;border-radius:10px;" placeholder="Kullanıcı adı">
-<button style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:#0d6efd;color:white;">Giriş</button>
-</form>
-
-<p style="color:red;">{{error}}</p>
-
+<input id="user" placeholder="Kullanıcı adı" style="width:100%;padding:12px;border:none;border-radius:10px;">
+<button onclick="login()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:#0d6efd;color:white;">Giriş</button>
 </div>
 </div>
 
-<!-- ================= CALC ================= -->
-<div id="calc" style="display:none;">
+<!-- CALC -->
+<div id="calc">
 <div id="box">
 
 <input id="ekran">
@@ -276,12 +235,12 @@ z-index:100;
 </div>
 </div>
 
-<!-- ================= GAME ================= -->
+<!-- GAME -->
 <div id="game">
 
 <div id="road"></div>
 
-<div id="score">0</div>
+<div id="score">Skor: 0 | Coin: 0 | HS: 0</div>
 <div id="car"></div>
 
 <div id="controls">
@@ -298,19 +257,16 @@ z-index:100;
 
 <script>
 
-/* LOGIN SWITCH (Musti) */
-document.querySelector("form").addEventListener("submit",function(e){
-let u=document.querySelector("input[name='user']").value;
-if(u!=="Musti"){
-e.preventDefault();
-alert("Hatalı kullanıcı adı!");
-}
-else{
-e.preventDefault();
+/* LOGIN */
+function login(){
+let u=document.getElementById("user").value;
+if(u==="Musti"){
 document.getElementById("login").style.display="none";
 document.getElementById("calc").style.display="flex";
+}else{
+alert("Hatalı kullanıcı adı");
 }
-});
+}
 
 /* CALC */
 function add(v){
@@ -321,15 +277,12 @@ function clearE(){
 document.getElementById("ekran").value="";
 }
 
-/* 2727 */
 function check(){
 let v=document.getElementById("ekran").value;
-
 if(v==="2727"){
 document.getElementById("startBtn").style.display="block";
 return;
 }
-
 try{
 document.getElementById("ekran").value=eval(v);
 }catch{
@@ -337,7 +290,7 @@ document.getElementById("ekran").value="ERROR";
 }
 }
 
-/* GAME START */
+/* GAME */
 let calc=document.getElementById("calc");
 let game=document.getElementById("game");
 let car=document.getElementById("car");
@@ -352,24 +305,74 @@ game.style.display="block";
 let x=window.innerWidth/2;
 let left=false,right=false;
 let dead=false;
+
 let score=0;
+let coins=0;
+let speed=6;
+let highScore=localStorage.getItem("hs")||0;
+
+/* UPDATE UI */
+function updateUI(){
+document.getElementById("score").innerText =
+"Skor: "+score+" | Coin: "+coins+" | HS: "+highScore;
+}
 
 /* RESTART */
 function restart(){
 dead=false;
 score=0;
+coins=0;
+speed=6;
 over.style.display="none";
 x=window.innerWidth/2;
 car.style.left=x+"px";
 }
 
-/* SCORE */
+/* SCORE + SPEED */
 setInterval(()=>{
 if(game.style.display==="block" && !dead){
 score++;
-document.getElementById("score").innerText=score;
+if(score%50===0) speed++;
+updateUI();
 }
 },100);
+
+/* COINS */
+function spawnCoin(){
+if(game.style.display!=="block") return;
+
+let c=document.createElement("div");
+c.className="coin";
+c.style.left=Math.random()*(window.innerWidth-50)+"px";
+document.body.appendChild(c);
+
+let y=-50;
+
+let m=setInterval(()=>{
+
+if(dead){c.remove();clearInterval(m);return;}
+
+y+=5;
+c.style.top=y+"px";
+
+let a=car.getBoundingClientRect();
+let b=c.getBoundingClientRect();
+
+if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
+coins++;
+c.remove();
+clearInterval(m);
+updateUI();
+}
+
+if(y>window.innerHeight){
+c.remove();
+clearInterval(m);
+}
+
+},20);
+}
+setInterval(spawnCoin,1200);
 
 /* ENEMY */
 function spawn(){
@@ -386,7 +389,7 @@ let m=setInterval(()=>{
 
 if(dead){e.remove();clearInterval(m);return;}
 
-y+=6;
+y+=speed;
 e.style.top=y+"px";
 
 let a=car.getBoundingClientRect();
@@ -394,6 +397,10 @@ let b=e.getBoundingClientRect();
 
 if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
 dead=true;
+if(score>highScore){
+highScore=score;
+localStorage.setItem("hs",highScore);
+}
 over.style.display="block";
 }
 
@@ -404,7 +411,6 @@ clearInterval(m);
 
 },20);
 }
-
 setInterval(spawn,800);
 
 /* CONTROLS */
@@ -445,10 +451,9 @@ loop();
 </html>
 """
 
-@app.route("/", methods=["GET","POST"])
-def login():
-    error=""
-    return render_template_string(game_html,error=error)
+@app.route("/")
+def home():
+    return render_template_string(html)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
