@@ -29,7 +29,7 @@ flex-direction:column;
 justify-content:center;
 align-items:center;
 background:#0b1220;
-z-index:50;
+z-index:100;
 }
 
 .menuBtn{
@@ -79,11 +79,28 @@ border-radius:10px;
 /* COIN */
 .coin{
 position:absolute;
-width:20px;
-height:20px;
+width:25px;
+height:25px;
 border-radius:50%;
-background:gold;
-box-shadow:0 0 10px gold;
+background:#00bfff;
+box-shadow:0 0 12px #00bfff;
+}
+
+/* EXPLOSION 💥 */
+.explosion{
+position:absolute;
+width:10px;
+height:10px;
+border-radius:50%;
+background:orange;
+box-shadow:0 0 20px orange;
+animation:boom 0.4s linear forwards;
+z-index:999;
+}
+
+@keyframes boom{
+0%{transform:scale(1);opacity:1;}
+100%{transform:scale(6);opacity:0;}
 }
 
 /* UI */
@@ -92,8 +109,8 @@ position:absolute;
 top:10px;
 left:10px;
 color:white;
-display:none;
 z-index:20;
+display:none;
 }
 
 /* CONTROLS */
@@ -116,6 +133,20 @@ background:rgba(255,255,255,0.2);
 font-size:40px;
 color:white;
 }
+
+/* GAME OVER */
+#gameOver{
+position:absolute;
+inset:0;
+display:none;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+background:rgba(0,0,0,0.8);
+color:white;
+z-index:200;
+}
+
 </style>
 </head>
 
@@ -124,8 +155,7 @@ color:white;
 <!-- MENU -->
 <div id="menu">
 <h1 style="color:white">NEON RACE</h1>
-<button class="menuBtn" onclick="startNormal()">NORMAL OYUN</button>
-<button class="menuBtn" onclick="start1v1()">1V1 BOT</button>
+<button class="menuBtn" onclick="startGame()">BAŞLA</button>
 </div>
 
 <!-- UI -->
@@ -142,6 +172,11 @@ COIN: <span id="coin">0</span>
 <button class="btn" id="right">▶</button>
 </div>
 
+<div id="gameOver">
+<h1>GAME OVER</h1>
+<button class="menuBtn" onclick="location.reload()">TEKRAR OYNA</button>
+</div>
+
 <script>
 
 let car=document.getElementById("car");
@@ -154,31 +189,13 @@ let hp=3;
 let coin=0;
 let dead=false;
 
-/* MODE */
-function startNormal(){
-init();
-}
-
-function start1v1(){
-init();
-spawnBot();
-}
-
-/* INIT */
-function init(){
-
+/* START */
+function startGame(){
 document.getElementById("menu").style.display="none";
 document.getElementById("road").style.display="block";
 document.getElementById("car").style.display="block";
 document.getElementById("ui").style.display="block";
 document.getElementById("controls").style.display="flex";
-
-hp=3;
-coin=0;
-dead=false;
-
-document.getElementById("hp").innerText=hp;
-document.getElementById("coin").innerText=coin;
 
 car.style.left=x+"px";
 }
@@ -206,9 +223,19 @@ requestAnimationFrame(loop);
 }
 loop();
 
+/* 💥 EXPLOSION */
+function explosion(x,y){
+let ex=document.createElement("div");
+ex.className="explosion";
+ex.style.left=x+"px";
+ex.style.top=y+"px";
+document.body.appendChild(ex);
+
+setTimeout(()=>ex.remove(),400);
+}
+
 /* ENEMY */
 function spawnEnemy(){
-
 if(dead) return;
 
 let e=document.createElement("div");
@@ -233,13 +260,16 @@ if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
 hp--;
 document.getElementById("hp").innerText=hp;
 
+/* 💥 PATLAMA */
+explosion(a.left,a.top);
+
 e.remove();
 clearInterval(t);
 
 if(hp<=0){
 dead=true;
-alert("GAME OVER");
-location.reload();
+document.getElementById("gameOver").style.display="flex";
+explosion(a.left,a.top);
 }
 
 }
@@ -255,7 +285,6 @@ setInterval(spawnEnemy,900);
 
 /* COIN */
 function spawnCoin(){
-
 if(dead) return;
 
 let c=document.createElement("div");
@@ -275,7 +304,7 @@ c.style.top=y+"px";
 let a=car.getBoundingClientRect();
 let b=c.getBoundingClientRect();
 
-if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
+if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.top)){
 
 coin++;
 document.getElementById("coin").innerText=coin;
@@ -293,31 +322,6 @@ clearInterval(t);
 },20);
 }
 setInterval(spawnCoin,1200);
-
-/* BOT */
-function spawnBot(){
-
-let bot=document.createElement("div");
-bot.className="enemy";
-bot.style.left=(window.innerWidth/2)+"px";
-bot.style.top=(window.innerHeight-220)+"px";
-document.body.appendChild(bot);
-
-let by=window.innerHeight-220;
-let bx=(window.innerWidth/2);
-
-setInterval(()=>{
-
-if(dead) return;
-
-by-=3.5;
-bx+=(Math.random()-0.5)*4;
-
-bot.style.top=by+"px";
-bot.style.left=bx+"px";
-
-},40);
-}
 
 </script>
 
