@@ -107,9 +107,10 @@ position:absolute;
 top:10px;
 left:10px;
 color:white;
-font-size:20px;
+font-size:22px;
 z-index:50;
 display:none;
+line-height:40px;
 }
 
 /* CAR */
@@ -121,13 +122,19 @@ width:50px;
 height:85px;
 border-radius:12px;
 display:none;
+
 background:
 linear-gradient(
 to bottom,
 #ff00aa,
 #ff66cc
 );
+
 box-shadow:0 0 15px #ff00aa;
+
+transition:
+transform 0.15s,
+rotate 0.15s;
 }
 
 #car::before{
@@ -156,8 +163,8 @@ border-radius:4px;
 
 .enemy{
 position:absolute;
-width:40px;
-height:65px;
+width:34px;
+height:55px;
 border-radius:10px;
 
 background:
@@ -186,19 +193,29 @@ position:absolute;
 bottom:25px;
 width:100%;
 display:none;
-justify-content:space-between;
-padding:0 20px;
-box-sizing:border-box;
+justify-content:space-around;
+align-items:center;
 z-index:100;
 }
 
+/* LEFT AREA */
+
+.leftArea{
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:10px;
+}
+
+/* BUTTON */
+
 .btn{
-width:110px;
-height:110px;
+width:100px;
+height:100px;
 border:none;
 border-radius:50%;
 background:rgba(255,255,255,0.15);
-font-size:42px;
+font-size:38px;
 color:white;
 }
 
@@ -243,18 +260,18 @@ GİRİŞ
 
 <div id="ui">
 
-🪙
-<span id="coin">0</span>
-
-|
-
-❤️
+❤️ Can:
 <span id="hp">3</span>
 
-|
+<br>
 
-🏆
+🏆 Skor:
 <span id="score">0</span>
+
+<br>
+
+🪙 Coin:
+<span id="coin">0</span>
 
 </div>
 
@@ -265,13 +282,26 @@ GİRİŞ
 
 <div id="car"></div>
 
+<!-- CONTROLS -->
+
 <div id="controls">
 
-<button class="btn" id="left">
+<div class="leftArea">
+
+<button class="btn"
+id="jump">
+⬆
+</button>
+
+<button class="btn"
+id="left">
 ◀
 </button>
 
-<button class="btn" id="right">
+</div>
+
+<button class="btn"
+id="right">
 ▶
 </button>
 
@@ -305,12 +335,7 @@ TEKRAR OYNA
 
 <button class="loginBtn"
 onclick="start1v1()">
-1V1 BOT
-</button>
-
-<button class="loginBtn"
-onclick="startGame()">
-NORMAL OYNA
+1V1 OYNA
 </button>
 
 </div>
@@ -359,6 +384,16 @@ let score=0;
 let highScore=0;
 
 let dead=false;
+
+/* JUMP */
+
+let jumping=false;
+let jumpY=0;
+
+/* DRIFT */
+
+let lastLeftTap=0;
+let lastRightTap=0;
 
 /* START */
 
@@ -422,7 +457,7 @@ spawnBot();
 
 }
 
-/* CONTROLS */
+/* BUTTONS */
 
 const leftBtn =
 document.getElementById("left");
@@ -430,11 +465,39 @@ document.getElementById("left");
 const rightBtn =
 document.getElementById("right");
 
+const jumpBtn =
+document.getElementById("jump");
+
+/* LEFT */
+
 leftBtn.addEventListener(
 "touchstart",
 e=>{
+
 e.preventDefault();
+
 left=true;
+
+/* DRIFT */
+
+let now=Date.now();
+
+if(now-lastLeftTap<250){
+
+car.style.transform=
+"rotate(-25deg)";
+
+setTimeout(()=>{
+car.style.transform=
+"rotate(0deg)";
+},300);
+
+x-=40;
+
+}
+
+lastLeftTap=now;
+
 },
 {passive:false}
 );
@@ -448,11 +511,36 @@ left=false;
 {passive:false}
 );
 
+/* RIGHT */
+
 rightBtn.addEventListener(
 "touchstart",
 e=>{
+
 e.preventDefault();
+
 right=true;
+
+/* DRIFT */
+
+let now=Date.now();
+
+if(now-lastRightTap<250){
+
+car.style.transform=
+"rotate(25deg)";
+
+setTimeout(()=>{
+car.style.transform=
+"rotate(0deg)";
+},300);
+
+x+=40;
+
+}
+
+lastRightTap=now;
+
 },
 {passive:false}
 );
@@ -465,6 +553,63 @@ right=false;
 },
 {passive:false}
 );
+
+/* JUMP */
+
+jumpBtn.addEventListener(
+"touchstart",
+e=>{
+
+e.preventDefault();
+
+if(!jumping){
+
+jumping=true;
+
+jump();
+
+}
+
+},
+{passive:false}
+);
+
+function jump(){
+
+let up=true;
+
+let t=setInterval(()=>{
+
+if(up){
+
+jumpY+=12;
+
+if(jumpY>=140){
+up=false;
+}
+
+}else{
+
+jumpY-=12;
+
+if(jumpY<=0){
+
+jumpY=0;
+
+jumping=false;
+
+clearInterval(t);
+
+}
+
+}
+
+car.style.transform=
+"translateY(-"+jumpY+"px)";
+
+},16);
+
+}
 
 /* MOVE */
 
@@ -526,8 +671,6 @@ ex.style.background="orange";
 
 ex.style.boxShadow=
 "0 0 25px orange";
-
-ex.style.zIndex="999";
 
 document.body.appendChild(ex);
 
@@ -595,10 +738,13 @@ car.getBoundingClientRect();
 let b =
 e.getBoundingClientRect();
 
-if(!(a.right<b.left||
+if(
+!jumping &&
+!(a.right<b.left||
 a.left>b.right||
 a.bottom<b.top||
-a.top>b.bottom)){
+a.top>b.bottom)
+){
 
 hp--;
 
@@ -753,11 +899,7 @@ return;
 
 }
 
-/* ÇOK YAVAŞ BOT */
-
 by-=0.7;
-
-/* AZ HAREKET */
 
 bx+=(Math.random()-0.5)*0.3;
 
@@ -785,5 +927,5 @@ def home():
     return render_template_string(HTML)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT",10000))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
