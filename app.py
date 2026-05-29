@@ -1,118 +1,122 @@
-# requirements.txt
-# flask
-# flask-socketio
-# eventlet
-
-from flask import Flask, render_template_string, request
-from flask_socketio import SocketIO, emit
+from flask import Flask, render_template_string
 import os
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
 
-# ONLINE PLAYERS
-players = {}
-counter = 1
-
-html = """
-
+HTML = """
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Neon Multiplayer</title>
-
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<title>Neon Race</title>
 
 <style>
 
 body{
 margin:0;
+overflow:hidden;
 background:#071014;
 font-family:Arial;
-overflow:hidden;
-color:white;
+user-select:none;
 }
 
-#nameBox{
-position:absolute;
-top:10px;
-left:10px;
-font-size:22px;
-z-index:20;
-}
-
+/* MENU */
 #menu{
 position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-background:#111827;
-padding:20px;
-border-radius:20px;
-width:300px;
-text-align:center;
-z-index:20;
+inset:0;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+background:#0b1220;
+z-index:50;
 }
 
-.btn{
-width:100%;
+.menuBtn{
+width:250px;
 padding:15px;
-margin-top:10px;
+margin:10px;
 border:none;
 border-radius:12px;
+font-size:20px;
 background:#0891b2;
 color:white;
-font-size:18px;
 }
 
-#playersPanel{
-display:none;
+/* ROAD */
+#road{
 position:absolute;
-top:50%;
 left:50%;
-transform:translate(-50%,-50%);
-background:#111827;
-padding:20px;
-border-radius:20px;
-width:300px;
-z-index:30;
+transform:translateX(-50%);
+width:180px;
+height:100%;
+background:#1a1a1a;
+border-left:2px solid #00d5ff;
+border-right:2px solid #00d5ff;
+display:none;
 }
 
-.playerRow{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-top:10px;
-background:#1f2937;
-padding:10px;
+/* CAR */
+#car{
+position:absolute;
+bottom:120px;
+width:45px;
+height:80px;
+background:#ff00aa;
+border-radius:10px;
+display:none;
+}
+
+/* ENEMY */
+.enemy{
+position:absolute;
+width:45px;
+height:80px;
+background:#00aaff;
 border-radius:10px;
 }
 
-#inviteBox{
-display:none;
+/* COIN */
+.coin{
 position:absolute;
-top:20px;
-left:50%;
-transform:translateX(-50%);
-background:#1f2937;
-padding:20px;
-border-radius:15px;
-z-index:50;
-text-align:center;
+width:20px;
+height:20px;
+border-radius:50%;
+background:gold;
+box-shadow:0 0 10px gold;
 }
 
-#countdown{
-display:none;
+/* UI */
+#ui{
 position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-font-size:120px;
-font-weight:bold;
-z-index:100;
+top:10px;
+left:10px;
+color:white;
+z-index:20;
+display:none;
+}
+
+/* CONTROLS */
+#controls{
+position:absolute;
+bottom:20px;
+width:100%;
+display:flex;
+justify-content:space-between;
+padding:0 20px;
+box-sizing:border-box;
+display:none;
+}
+
+.btn{
+width:90px;
+height:90px;
+border-radius:50%;
+border:none;
+background:rgba(255,255,255,0.2);
+font-size:40px;
+color:white;
 }
 
 </style>
@@ -120,232 +124,212 @@ z-index:100;
 
 <body>
 
-<div id="nameBox">
-YÜKLENİYOR...
-</div>
-
 <div id="menu">
+<h1 style="color:white">NEON RACE</h1>
 
-<h1>NEON RACE</h1>
-
-<button class="btn">
-TEKRAR OYNA
-</button>
-
-<button class="btn">
-1V1
-</button>
-
-<button class="btn" onclick="openPlayers()">
-MULTIPLAYER
-</button>
-
+<button class="menuBtn" onclick="startGame()">NORMAL OYUN</button>
+<button class="menuBtn" onclick="start1v1()">1V1 (BOT)</button>
+<button class="menuBtn" onclick="alert('MULTIPLAYER SONRA EKLENECEK')">MULTIPLAYER</button>
 </div>
 
-<div id="playersPanel">
-
-<h2>AKTİF OYUNCULAR</h2>
-
-<div id="playersList"></div>
-
+<div id="ui">
+CAN: <span id="hp">3</span> |
+COIN: <span id="coin">0</span>
 </div>
 
-<div id="inviteBox">
+<div id="road"></div>
+<div id="car"></div>
 
-<h2 id="inviteText"></h2>
-
-<button class="btn" onclick="acceptInvite()">
-KABUL ET
-</button>
-
-<button class="btn" onclick="rejectInvite()">
-REDDET
-</button>
-
-</div>
-
-<div id="countdown">
-5
+<div id="controls">
+<button class="btn" id="left">◀</button>
+<button class="btn" id="right">▶</button>
 </div>
 
 <script>
 
-const socket = io();
+let car=document.getElementById("car");
+let x=window.innerWidth/2;
 
-let myName = "";
-let inviteFrom = null;
+let left=false;
+let right=false;
 
-/* JOIN */
+let hp=3;
+let coin=0;
+let dead=false;
 
-socket.on("welcome",(data)=>{
+let mode="normal";
+let bot=null;
 
-myName = data.name;
-
-document.getElementById("nameBox").innerText =
-myName;
-
-});
-
-/* PLAYERS */
-
-socket.on("players",(list)=>{
-
-let box = document.getElementById("playersList");
-
-box.innerHTML = "";
-
-let count = 0;
-
-for(let id in list){
-
-if(list[id].name !== myName){
-
-count++;
-
-box.innerHTML += `
-<div class="playerRow">
-
-<span>${list[id].name}</span>
-
-<button onclick="invitePlayer('${id}')">
-DAVET ET
-</button>
-
-</div>
-`;
-
-}
-
-}
-
-if(count===0){
-
-box.innerHTML = "<h3>NO FRIEND</h3>";
-
-}
-
-});
-
-/* OPEN PANEL */
-
-function openPlayers(){
-
-document.getElementById("playersPanel").style.display =
-"block";
-
-socket.emit("get_players");
-
-}
-
-/* INVITE */
-
-function invitePlayer(id){
-
-socket.emit("invite",{
-target:id
-});
-
-}
-
-/* RECEIVE INVITE */
-
-socket.on("invite_received",(data)=>{
-
-inviteFrom = data.id;
-
-document.getElementById("inviteBox").style.display =
-"block";
-
-document.getElementById("inviteText").innerText =
-data.name + " seni VS çağırıyor";
-
-});
-
-/* ACCEPT */
-
-function acceptInvite(){
-
-socket.emit("accept_invite",{
-target:inviteFrom
-});
-
-document.getElementById("inviteBox").style.display =
-"none";
-
-}
-
-/* REJECT */
-
-function rejectInvite(){
-
-socket.emit("reject_invite",{
-target:inviteFrom
-});
-
-document.getElementById("inviteBox").style.display =
-"none";
-
-}
-
-/* REJECTED */
-
-socket.on("invite_rejected",(data)=>{
-
-alert(data.name + " reddetti");
-
-});
-
-/* START MATCH */
-
-socket.on("start_match",()=>{
-
-startCountdown();
-
-});
-
-/* COUNTDOWN */
-
-function startCountdown(){
-
-let cd = document.getElementById("countdown");
-
-cd.style.display = "block";
-
-let n = 5;
-
-cd.innerText = n;
-
-let timer = setInterval(()=>{
-
-n--;
-
-cd.innerText = n;
-
-if(n<=0){
-
-clearInterval(timer);
-
-cd.innerText = "GO!";
-
-setTimeout(()=>{
-
-cd.style.display="none";
-
-startGame();
-
-},1000);
-
-}
-
-},1000);
-
-}
-
-/* GAME */
-
+/* MENU START */
 function startGame(){
+mode="normal";
+init();
+}
 
-alert("15 CANLIK MULTIPLAYER BAŞLADI");
+function start1v1(){
+mode="bot";
+init();
+spawnBot();
+}
+
+/* INIT */
+function init(){
+
+document.getElementById("menu").style.display="none";
+document.getElementById("road").style.display="block";
+document.getElementById("car").style.display="block";
+document.getElementById("ui").style.display="block";
+document.getElementById("controls").style.display="flex";
+
+car.style.left=x+"px";
+
+hp=3;
+coin=0;
+dead=false;
+
+document.getElementById("hp").innerText=hp;
+document.getElementById("coin").innerText=coin;
+}
+
+/* CONTROLS */
+document.getElementById("left").ontouchstart=()=>left=true;
+document.getElementById("left").ontouchend=()=>left=false;
+
+document.getElementById("right").ontouchstart=()=>right=true;
+document.getElementById("right").ontouchend=()=>right=false;
+
+/* LOOP */
+function loop(){
+
+if(!dead){
+
+if(left) x-=6;
+if(right) x+=6;
+
+if(x<30) x=30;
+if(x>window.innerWidth-80) x=window.innerWidth-80;
+
+car.style.left=x+"px";
+}
+
+requestAnimationFrame(loop);
+}
+loop();
+
+/* ENEMY */
+function spawnEnemy(){
+
+if(dead) return;
+
+let e=document.createElement("div");
+e.className="enemy";
+e.style.left=Math.random()*(window.innerWidth-60)+"px";
+document.body.appendChild(e);
+
+let y=-100;
+
+let t=setInterval(()=>{
+
+if(dead){e.remove();clearInterval(t);return;}
+
+y+=6;
+e.style.top=y+"px";
+
+let a=car.getBoundingClientRect();
+let b=e.getBoundingClientRect();
+
+if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
+
+hp--;
+document.getElementById("hp").innerText=hp;
+
+e.remove();
+clearInterval(t);
+
+if(hp<=0){
+dead=true;
+alert("GAME OVER");
+location.reload();
+}
+
+}
+
+if(y>window.innerHeight){
+e.remove();
+clearInterval(t);
+}
+
+},20);
+
+}
+
+setInterval(spawnEnemy,900);
+
+/* COIN */
+function spawnCoin(){
+
+if(dead) return;
+
+let c=document.createElement("div");
+c.className="coin";
+c.style.left=Math.random()*(window.innerWidth-40)+"px";
+document.body.appendChild(c);
+
+let y=-50;
+
+let t=setInterval(()=>{
+
+if(dead){c.remove();clearInterval(t);return;}
+
+y+=5;
+c.style.top=y+"px";
+
+let a=car.getBoundingClientRect();
+let b=c.getBoundingClientRect();
+
+if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
+
+coin++;
+document.getElementById("coin").innerText=coin;
+
+c.remove();
+clearInterval(t);
+
+}
+
+if(y>window.innerHeight){
+c.remove();
+clearInterval(t);
+}
+
+},20);
+
+}
+setInterval(spawnCoin,1200);
+
+/* BOT (1V1) */
+function spawnBot(){
+
+bot=document.createElement("div");
+bot.className="enemy";
+bot.style.left=(window.innerWidth/2)+20+"px";
+bot.style.top=(window.innerHeight-220)+"px";
+document.body.appendChild(bot);
+
+let by=window.innerHeight-220;
+let bx=(window.innerWidth/2)+20;
+
+setInterval(()=>{
+
+if(dead) return;
+
+by-=3.5;
+bx+=(Math.random()-0.5)*5;
+
+bot.style.top=by+"px";
+bot.style.left=bx+"px";
+
+},40);
 
 }
 
@@ -353,92 +337,12 @@ alert("15 CANLIK MULTIPLAYER BAŞLADI");
 
 </body>
 </html>
-
 """
 
 @app.route("/")
 def home():
-    return render_template_string(html)
-
-@socketio.on("connect")
-def connect():
-
-    global counter
-
-    name = f"Nome {counter}"
-
-    players[request.sid] = {
-        "name": name
-    }
-
-    counter += 1
-
-    emit("welcome",{
-        "name": name
-    })
-
-    socketio.emit("players", players)
-
-@socketio.on("disconnect")
-def disconnect():
-
-    if request.sid in players:
-        del players[request.sid]
-
-    socketio.emit("players", players)
-
-@socketio.on("get_players")
-def get_players():
-
-    emit("players", players)
-
-@socketio.on("invite")
-def invite(data):
-
-    target = data["target"]
-
-    if target in players:
-
-        socketio.emit(
-            "invite_received",
-            {
-                "id": request.sid,
-                "name": players[request.sid]["name"]
-            },
-            room=target
-        )
-
-@socketio.on("accept_invite")
-def accept_invite(data):
-
-    target = data["target"]
-
-    socketio.emit(
-        "start_match",
-        room=target
-    )
-
-    emit("start_match")
-
-@socketio.on("reject_invite")
-def reject_invite(data):
-
-    target = data["target"]
-
-    socketio.emit(
-        "invite_rejected",
-        {
-            "name": players[request.sid]["name"]
-        },
-        room=target
-    )
+    return render_template_string(HTML)
 
 if __name__ == "__main__":
-
-    port = int(os.environ.get("PORT", 10000))
-
-    socketio.run(
-        app,
-        host="0.0.0.0",
-        port=port
-    )
+    port = int(os.environ.get("PORT",10000))
+    app.run(host="0.0.0.0",port=port)
