@@ -1,3 +1,7 @@
+# requirements.txt
+# flask
+# gunicorn
+
 from flask import Flask, render_template_string
 import os
 
@@ -68,7 +72,7 @@ border-right:3px solid #00d5ff;
 display:none;
 }
 
-/* ROAD LINE */
+/* LINE */
 
 #line{
 position:absolute;
@@ -88,7 +92,7 @@ display:none;
 opacity:0.7;
 }
 
-/* PLAYER NAME */
+/* PLAYER */
 
 #playerName{
 position:absolute;
@@ -118,9 +122,9 @@ line-height:40px;
 #car{
 position:absolute;
 bottom:120px;
-width:50px;
-height:85px;
-border-radius:12px;
+width:68px;
+height:95px;
+border-radius:14px;
 display:none;
 
 background:
@@ -130,7 +134,7 @@ to bottom,
 #ff66cc
 );
 
-box-shadow:0 0 15px #ff00aa;
+box-shadow:0 0 20px #ff00aa;
 
 transition:
 transform 0.15s,
@@ -140,10 +144,10 @@ rotate 0.15s;
 #car::before{
 content:'';
 position:absolute;
-left:8px;
+left:10px;
 top:12px;
-width:34px;
-height:18px;
+width:48px;
+height:20px;
 background:#87cefa;
 border-radius:6px;
 }
@@ -151,9 +155,9 @@ border-radius:6px;
 #car::after{
 content:'';
 position:absolute;
-left:12px;
+left:18px;
 bottom:10px;
-width:26px;
+width:32px;
 height:8px;
 background:#222;
 border-radius:4px;
@@ -163,8 +167,8 @@ border-radius:4px;
 
 .enemy{
 position:absolute;
-width:34px;
-height:55px;
+width:30px;
+height:50px;
 border-radius:10px;
 
 background:
@@ -198,16 +202,12 @@ align-items:center;
 z-index:100;
 }
 
-/* LEFT AREA */
-
 .leftArea{
 display:flex;
 flex-direction:column;
 align-items:center;
 gap:10px;
 }
-
-/* BUTTON */
 
 .btn{
 width:100px;
@@ -217,6 +217,12 @@ border-radius:50%;
 background:rgba(255,255,255,0.15);
 font-size:38px;
 color:white;
+}
+
+#jump{
+width:75px;
+height:75px;
+font-size:30px;
 }
 
 /* GAME OVER */
@@ -261,7 +267,7 @@ GİRİŞ
 <div id="ui">
 
 ❤️ Can:
-<span id="hp">3</span>
+<span id="hp">5</span>
 
 <br>
 
@@ -342,6 +348,42 @@ onclick="start1v1()">
 
 <script>
 
+/* AUDIO */
+
+function playSound(freq,duration){
+
+let audio =
+new(window.AudioContext||
+window.webkitAudioContext)();
+
+let osc =
+audio.createOscillator();
+
+let gain =
+audio.createGain();
+
+osc.connect(gain);
+gain.connect(audio.destination);
+
+osc.frequency.value=freq;
+osc.type="square";
+
+osc.start();
+
+gain.gain.setValueAtTime(
+0.1,
+audio.currentTime
+);
+
+gain.gain.exponentialRampToValueAtTime(
+0.0001,
+audio.currentTime+duration
+);
+
+osc.stop(audio.currentTime+duration);
+
+}
+
 /* LOGIN */
 
 function login(){
@@ -377,7 +419,7 @@ window.innerWidth/2;
 let left=false;
 let right=false;
 
-let hp=3;
+let hp=5;
 let coin=0;
 
 let score=0;
@@ -385,12 +427,8 @@ let highScore=0;
 
 let dead=false;
 
-/* JUMP */
-
 let jumping=false;
 let jumpY=0;
-
-/* DRIFT */
 
 let lastLeftTap=0;
 let lastRightTap=0;
@@ -401,7 +439,7 @@ function startGame(){
 
 dead=false;
 
-hp=3;
+hp=5;
 coin=0;
 score=0;
 
@@ -476,13 +514,15 @@ e=>{
 
 e.preventDefault();
 
-left=true;
+playSound(220,0.08);
 
-/* DRIFT */
+left=true;
 
 let now=Date.now();
 
 if(now-lastLeftTap<250){
+
+playSound(120,0.2);
 
 car.style.transform=
 "rotate(-25deg)";
@@ -492,7 +532,7 @@ car.style.transform=
 "rotate(0deg)";
 },300);
 
-x-=40;
+x-=50;
 
 }
 
@@ -519,13 +559,15 @@ e=>{
 
 e.preventDefault();
 
-right=true;
+playSound(220,0.08);
 
-/* DRIFT */
+right=true;
 
 let now=Date.now();
 
 if(now-lastRightTap<250){
+
+playSound(120,0.2);
 
 car.style.transform=
 "rotate(25deg)";
@@ -535,7 +577,7 @@ car.style.transform=
 "rotate(0deg)";
 },300);
 
-x+=40;
+x+=50;
 
 }
 
@@ -562,6 +604,8 @@ e=>{
 
 e.preventDefault();
 
+playSound(700,0.15);
+
 if(!jumping){
 
 jumping=true;
@@ -582,15 +626,15 @@ let t=setInterval(()=>{
 
 if(up){
 
-jumpY+=12;
+jumpY+=16;
 
-if(jumpY>=140){
+if(jumpY>=190){
 up=false;
 }
 
 }else{
 
-jumpY-=12;
+jumpY-=16;
 
 if(jumpY<=0){
 
@@ -654,6 +698,8 @@ document.getElementById("score")
 /* EXPLOSION */
 
 function explosion(x,y){
+
+playSound(80,0.4);
 
 let ex =
 document.createElement("div");
@@ -747,6 +793,8 @@ a.top>b.bottom)
 ){
 
 hp--;
+
+playSound(100,0.2);
 
 document.getElementById("hp")
 .innerText=hp;
@@ -842,6 +890,8 @@ a.bottom<b.top||
 a.top>b.bottom)){
 
 coin++;
+
+playSound(900,0.08);
 
 document.getElementById("coin")
 .innerText=coin;
