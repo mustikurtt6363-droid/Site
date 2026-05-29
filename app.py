@@ -19,7 +19,7 @@ width:100%;
 height:100%;
 overflow:hidden;
 font-family:Arial;
-background:#222;
+background:#111;
 position:fixed;
 touch-action:none;
 user-select:none;
@@ -106,51 +106,83 @@ font-size:18px;
 display:none;
 position:fixed;
 inset:0;
-background:#555;
+background:#2b2b2b;
 }
 
+/* ROAD */
 #road{
 position:absolute;
 left:50%;
 transform:translateX(-50%);
-width:140px;
+width:120px;
 height:100%;
-background:#2b2b2b;
+background:linear-gradient(#3a3a3a,#1a1a1a);
+box-shadow:inset 0 0 20px black;
 }
 
+/* CAR */
 #car{
 position:absolute;
 bottom:120px;
 left:50%;
-width:50px;
-height:90px;
-background:red;
-border-radius:8px;
+width:45px;
+height:80px;
+background:linear-gradient(#ff2d2d,#990000);
+border-radius:10px;
+border:2px solid #330000;
 }
 
+/* CAR DETAILS */
+#car::before{
+content:"";
+position:absolute;
+top:8px;
+left:10px;
+width:25px;
+height:20px;
+background:#87cefa;
+border-radius:5px;
+}
+
+#car::after{
+content:"";
+position:absolute;
+bottom:6px;
+left:6px;
+width:6px;
+height:6px;
+background:yellow;
+border-radius:50%;
+box-shadow:20px 0 yellow;
+}
+
+/* ENEMY */
 .enemy{
 position:absolute;
-width:50px;
-height:90px;
+width:40px;
+height:70px;
 background:yellow;
+border-radius:8px;
 top:-120px;
 }
 
+/* COIN */
 .coin{
 position:absolute;
-width:25px;
-height:25px;
+width:22px;
+height:22px;
 border-radius:50%;
 background:gold;
 top:-50px;
 }
 
+/* SCORE */
 #score{
 position:absolute;
 top:10px;
 left:10px;
 color:white;
-font-size:18px;
+font-size:16px;
 z-index:5;
 }
 
@@ -177,15 +209,42 @@ color:white;
 touch-action:none;
 }
 
+/* GAME OVER */
 #over{
 display:none;
 position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-color:white;
+inset:0;
+background:rgba(0,0,0,0.7);
+justify-content:center;
+align-items:center;
+}
+
+.panel{
+background:linear-gradient(#1e1e1e,#2c2c2c);
+padding:25px;
+border-radius:15px;
 text-align:center;
-z-index:100;
+color:white;
+width:80%;
+max-width:300px;
+box-shadow:0 0 20px black;
+}
+
+.panel h1{
+color:#ff4d4d;
+}
+
+.panel p{
+margin:8px 0;
+}
+
+.panel button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:10px;
+background:#0d6efd;
+color:white;
 }
 </style>
 </head>
@@ -240,7 +299,7 @@ z-index:100;
 
 <div id="road"></div>
 
-<div id="score">Skor: 0 | Coin: 0 | HS: 0</div>
+<div id="score">Skor</div>
 <div id="car"></div>
 
 <div id="controls">
@@ -249,8 +308,16 @@ z-index:100;
 </div>
 
 <div id="over">
+<div class="panel">
 <h1>GAME OVER</h1>
-<button onclick="restart()">RESTART</button>
+
+<p>YAPILAN SKOR: <span id="fs"></span></p>
+<p>KAZANILAN PARA: <span id="fc"></span></p>
+<p>YÜKSEK SKOR: <span id="fh"></span></p>
+
+<button onclick="restart()">TEKRAR OYNA</button>
+
+</div>
 </div>
 
 </div>
@@ -260,12 +327,12 @@ z-index:100;
 /* LOGIN */
 function login(){
 let u=document.getElementById("user").value;
-if(u==="Musti"){
+if(u!=="Musti"){
+alert("Hatalı kullanıcı");
+return;
+}
 document.getElementById("login").style.display="none";
 document.getElementById("calc").style.display="flex";
-}else{
-alert("Hatalı kullanıcı adı");
-}
 }
 
 /* CALC */
@@ -277,6 +344,7 @@ function clearE(){
 document.getElementById("ekran").value="";
 }
 
+/* START CODE */
 function check(){
 let v=document.getElementById("ekran").value;
 if(v==="2727"){
@@ -311,10 +379,10 @@ let coins=0;
 let speed=6;
 let highScore=localStorage.getItem("hs")||0;
 
-/* UPDATE UI */
-function updateUI(){
-document.getElementById("score").innerText =
-"Skor: "+score+" | Coin: "+coins+" | HS: "+highScore;
+/* UI */
+function update(){
+document.getElementById("score").innerText=
+"Skor:"+score+" Coin:"+coins+" HS:"+highScore;
 }
 
 /* RESTART */
@@ -332,14 +400,14 @@ car.style.left=x+"px";
 setInterval(()=>{
 if(game.style.display==="block" && !dead){
 score++;
-if(score%50===0) speed++;
-updateUI();
+if(score%50===0)speed++;
+update();
 }
 },100);
 
-/* COINS */
+/* COIN */
 function spawnCoin(){
-if(game.style.display!=="block") return;
+if(game.style.display!=="block")return;
 
 let c=document.createElement("div");
 c.className="coin";
@@ -362,7 +430,7 @@ if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
 coins++;
 c.remove();
 clearInterval(m);
-updateUI();
+update();
 }
 
 if(y>window.innerHeight){
@@ -376,7 +444,7 @@ setInterval(spawnCoin,1200);
 
 /* ENEMY */
 function spawn(){
-if(game.style.display!=="block") return;
+if(game.style.display!=="block")return;
 
 let e=document.createElement("div");
 e.className="enemy";
@@ -397,11 +465,17 @@ let b=e.getBoundingClientRect();
 
 if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
 dead=true;
+
 if(score>highScore){
 highScore=score;
 localStorage.setItem("hs",highScore);
 }
-over.style.display="block";
+
+document.getElementById("fs").innerText=score;
+document.getElementById("fc").innerText=coins;
+document.getElementById("fh").innerText=highScore;
+
+over.style.display="flex";
 }
 
 if(y>window.innerHeight){
