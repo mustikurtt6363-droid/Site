@@ -8,7 +8,9 @@ HTML = """
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
 <title>Neon Race</title>
 
 <style>
@@ -22,6 +24,7 @@ touch-action:none;
 }
 
 /* LOGIN */
+
 #login{
 position:absolute;
 inset:0;
@@ -53,41 +56,21 @@ color:white;
 font-size:20px;
 }
 
-/* MENU */
-#menu{
-position:absolute;
-inset:0;
-display:none;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-background:#0b1220;
-z-index:100;
-}
-
-.menuBtn{
-width:260px;
-padding:16px;
-margin:10px;
-border:none;
-border-radius:14px;
-font-size:22px;
-background:#0891b2;
-color:white;
-}
-
 /* ROAD */
+
 #road{
 position:absolute;
 left:50%;
 transform:translateX(-50%);
-width:190px;
+width:320px;
 height:100%;
 background:#1d1d1d;
 border-left:3px solid #00d5ff;
 border-right:3px solid #00d5ff;
 display:none;
 }
+
+/* ROAD LINE */
 
 #line{
 position:absolute;
@@ -108,6 +91,7 @@ opacity:0.7;
 }
 
 /* PLAYER NAME */
+
 #playerName{
 position:absolute;
 top:10px;
@@ -119,6 +103,7 @@ display:none;
 }
 
 /* CAR */
+
 #car{
 position:absolute;
 bottom:120px;
@@ -126,12 +111,14 @@ width:50px;
 height:85px;
 border-radius:12px;
 display:none;
+
 background:
 linear-gradient(
 to bottom,
 #ff00aa,
 #ff66cc
 );
+
 box-shadow:0 0 15px #ff00aa;
 }
 
@@ -158,11 +145,13 @@ border-radius:4px;
 }
 
 /* ENEMY */
+
 .enemy{
 position:absolute;
 width:50px;
 height:85px;
 border-radius:12px;
+
 background:
 linear-gradient(
 to bottom,
@@ -172,6 +161,7 @@ to bottom,
 }
 
 /* COIN */
+
 .coin{
 position:absolute;
 width:26px;
@@ -182,6 +172,7 @@ box-shadow:0 0 15px gold;
 }
 
 /* UI */
+
 #ui{
 position:absolute;
 top:10px;
@@ -193,6 +184,7 @@ display:none;
 }
 
 /* CONTROLS */
+
 #controls{
 position:absolute;
 bottom:25px;
@@ -215,6 +207,7 @@ color:white;
 }
 
 /* GAME OVER */
+
 #gameOver{
 position:absolute;
 inset:0;
@@ -222,7 +215,7 @@ display:none;
 justify-content:center;
 align-items:center;
 flex-direction:column;
-background:rgba(0,0,0,0.8);
+background:rgba(0,0,0,0.85);
 z-index:300;
 color:white;
 }
@@ -233,6 +226,7 @@ color:white;
 <body>
 
 <!-- LOGIN -->
+
 <div id="login">
 
 <h1 style="color:white">
@@ -240,7 +234,7 @@ KULLANICI ADI
 </h1>
 
 <input id="nameInput"
-placeholder="Kullanıcı adı">
+placeholder="Gir...">
 
 <button class="loginBtn"
 onclick="login()">
@@ -249,30 +243,23 @@ GİRİŞ
 
 </div>
 
-<!-- MENU -->
-<div id="menu">
-
-<h1 style="color:white">
-NEON RACE
-</h1>
-
-<button class="menuBtn"
-onclick="startGame()">
-NORMAL OYNA
-</button>
-
-<button class="menuBtn"
-onclick="start1v1()">
-1V1 BOT
-</button>
-
-</div>
-
 <!-- UI -->
+
 <div id="ui">
-CAN: <span id="hp">3</span>
+
+CAN:
+<span id="hp">3</span>
+
 |
-COIN: <span id="coin">0</span>
+
+COIN:
+<span id="coin">0</span>
+
+|
+
+SKOR:
+<span id="score">0</span>
+
 </div>
 
 <div id="playerName"></div>
@@ -283,17 +270,52 @@ COIN: <span id="coin">0</span>
 <div id="car"></div>
 
 <div id="controls">
-<button class="btn" id="left">◀</button>
-<button class="btn" id="right">▶</button>
+
+<button class="btn"
+id="left">
+◀
+</button>
+
+<button class="btn"
+id="right">
+▶
+</button>
+
 </div>
 
 <!-- GAME OVER -->
+
 <div id="gameOver">
 
 <h1>GAME OVER</h1>
 
-<button class="menuBtn"
-onclick="backMenu()">
+<h2>
+TOPLAM COİN:
+<span id="finalCoin">0</span>
+</h2>
+
+<h2>
+SKOR:
+<span id="finalScore">0</span>
+</h2>
+
+<h2>
+SKOR REKOR:
+<span id="highScoreText">0</span>
+</h2>
+
+<button class="loginBtn"
+onclick="restartGame()">
+TEKRAR OYNA
+</button>
+
+<button class="loginBtn"
+onclick="start1v1()">
+1V1 BOT
+</button>
+
+<button class="loginBtn"
+onclick="startGame()">
 NORMAL OYNA
 </button>
 
@@ -315,11 +337,13 @@ return;
 document.getElementById("playerName")
 .innerText=name;
 
+document.getElementById("playerName")
+.style.display="block";
+
 document.getElementById("login")
 .style.display="none";
 
-document.getElementById("menu")
-.style.display="flex";
+startGame();
 
 }
 
@@ -328,13 +352,18 @@ document.getElementById("menu")
 let car =
 document.getElementById("car");
 
-let x = window.innerWidth/2;
+let x =
+window.innerWidth/2;
 
 let left=false;
 let right=false;
 
 let hp=3;
 let coin=0;
+
+let score=0;
+let highScore=0;
+
 let dead=false;
 
 /* START */
@@ -342,8 +371,10 @@ let dead=false;
 function startGame(){
 
 dead=false;
+
 hp=3;
 coin=0;
+score=0;
 
 document.getElementById("hp")
 .innerText=hp;
@@ -351,8 +382,8 @@ document.getElementById("hp")
 document.getElementById("coin")
 .innerText=coin;
 
-document.getElementById("menu")
-.style.display="none";
+document.getElementById("score")
+.innerText=score;
 
 document.getElementById("road")
 .style.display="block";
@@ -367,9 +398,6 @@ document.getElementById("controls")
 .style.display="flex";
 
 document.getElementById("ui")
-.style.display="block";
-
-document.getElementById("playerName")
 .style.display="block";
 
 document.getElementById("gameOver")
@@ -379,39 +407,24 @@ car.style.left=x+"px";
 
 }
 
-/* 1V1 */
+/* RESTART */
 
-function start1v1(){
-startGame();
-spawnBot();
-}
-
-/* BACK MENU */
-
-function backMenu(){
+function restartGame(){
 
 document.getElementById("gameOver")
 .style.display="none";
 
-document.getElementById("road")
-.style.display="none";
+startGame();
 
-document.getElementById("line")
-.style.display="none";
+}
 
-document.getElementById("car")
-.style.display="none";
+/* 1V1 */
 
-document.getElementById("controls")
-.style.display="none";
+function start1v1(){
 
-document.getElementById("ui")
-.style.display="none";
+startGame();
 
-document.getElementById("menu")
-.style.display="flex";
-
-dead=false;
+spawnBot();
 
 }
 
@@ -468,11 +481,11 @@ if(!dead){
 if(left) x-=6;
 if(right) x+=6;
 
-if(x<window.innerWidth/2-85)
-x=window.innerWidth/2-85;
+if(x<window.innerWidth/2-150)
+x=window.innerWidth/2-150;
 
-if(x>window.innerWidth/2+35)
-x=window.innerWidth/2+35;
+if(x>window.innerWidth/2+100)
+x=window.innerWidth/2+100;
 
 car.style.left=x+"px";
 
@@ -484,20 +497,42 @@ requestAnimationFrame(loop);
 
 loop();
 
+/* SCORE */
+
+setInterval(()=>{
+
+if(!dead){
+
+score++;
+
+document.getElementById("score")
+.innerText=score;
+
+}
+
+},500);
+
 /* EXPLOSION */
 
 function explosion(x,y){
 
-let ex=document.createElement("div");
+let ex =
+document.createElement("div");
 
 ex.style.position="absolute";
 ex.style.left=x+"px";
 ex.style.top=y+"px";
+
 ex.style.width="15px";
 ex.style.height="15px";
+
 ex.style.borderRadius="50%";
+
 ex.style.background="orange";
-ex.style.boxShadow="0 0 25px orange";
+
+ex.style.boxShadow=
+"0 0 25px orange";
+
 ex.style.zIndex="999";
 
 document.body.appendChild(ex);
@@ -515,8 +550,11 @@ ex.style.opacity=
 1-(s/6);
 
 if(s>6){
+
 clearInterval(t);
+
 ex.remove();
+
 }
 
 },16);
@@ -529,13 +567,14 @@ function spawnEnemy(){
 
 if(dead)return;
 
-let e=document.createElement("div");
+let e =
+document.createElement("div");
 
 e.className="enemy";
 
 e.style.left=
-(window.innerWidth/2-85+
-Math.random()*120)+"px";
+(window.innerWidth/2-150+
+Math.random()*250)+"px";
 
 document.body.appendChild(e);
 
@@ -544,17 +583,23 @@ let y=-120;
 let t=setInterval(()=>{
 
 if(dead){
+
 e.remove();
 clearInterval(t);
+
 return;
+
 }
 
 y+=6;
 
 e.style.top=y+"px";
 
-let a=car.getBoundingClientRect();
-let b=e.getBoundingClientRect();
+let a =
+car.getBoundingClientRect();
+
+let b =
+e.getBoundingClientRect();
 
 if(!(a.right<b.left||
 a.left>b.right||
@@ -575,6 +620,19 @@ clearInterval(t);
 if(hp<=0){
 
 dead=true;
+
+if(score>highScore){
+highScore=score;
+}
+
+document.getElementById("finalCoin")
+.innerText=coin;
+
+document.getElementById("finalScore")
+.innerText=score;
+
+document.getElementById("highScoreText")
+.innerText=highScore;
 
 document.getElementById("gameOver")
 .style.display="flex";
@@ -603,13 +661,14 @@ function spawnCoin(){
 
 if(dead)return;
 
-let c=document.createElement("div");
+let c =
+document.createElement("div");
 
 c.className="coin";
 
 c.style.left=
-(window.innerWidth/2-85+
-Math.random()*120)+"px";
+(window.innerWidth/2-150+
+Math.random()*250)+"px";
 
 document.body.appendChild(c);
 
@@ -618,17 +677,24 @@ let y=-50;
 let t=setInterval(()=>{
 
 if(dead){
+
 c.remove();
+
 clearInterval(t);
+
 return;
+
 }
 
 y+=5;
 
 c.style.top=y+"px";
 
-let a=car.getBoundingClientRect();
-let b=c.getBoundingClientRect();
+let a =
+car.getBoundingClientRect();
+
+let b =
+c.getBoundingClientRect();
 
 if(!(a.right<b.left||
 a.left>b.right||
@@ -664,37 +730,48 @@ setInterval(spawnCoin,1200);
 
 function spawnBot(){
 
-let bot=document.createElement("div");
+let bot =
+document.createElement("div");
 
 bot.className="enemy";
 
 bot.style.left=
-(window.innerWidth/2+20)+"px";
+(window.innerWidth/2+50)+"px";
 
 bot.style.top=
 (window.innerHeight-240)+"px";
 
 document.body.appendChild(bot);
 
-let by=window.innerHeight-240;
-let bx=window.innerWidth/2+20;
+let by=
+window.innerHeight-240;
+
+let bx=
+window.innerWidth/2+50;
 
 setInterval(()=>{
 
 if(dead){
+
 bot.remove();
+
 return;
+
 }
 
-by-=2.2;
+/* DAHA YAVAŞ BOT */
 
-bx+=(Math.random()-0.5)*1.5;
+by-=1.2;
 
-if(bx<window.innerWidth/2-85)
-bx=window.innerWidth/2-85;
+/* AZ HAREKET */
 
-if(bx>window.innerWidth/2+35)
-bx=window.innerWidth/2+35;
+bx+=(Math.random()-0.5)*0.7;
+
+if(bx<window.innerWidth/2-150)
+bx=window.innerWidth/2-150;
+
+if(bx>window.innerWidth/2+100)
+bx=window.innerWidth/2+100;
 
 bot.style.top=by+"px";
 bot.style.left=bx+"px";
@@ -714,5 +791,5 @@ def home():
     return render_template_string(HTML)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT",10000))
     app.run(host="0.0.0.0", port=port)
