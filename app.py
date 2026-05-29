@@ -3,12 +3,12 @@ import os
 
 app = Flask(__name__)
 
-html = """
+HTML = """
 <!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <title>Neon Car Game</title>
 
@@ -20,8 +20,8 @@ padding:0;
 width:100%;
 height:100%;
 overflow:hidden;
-font-family:Arial;
 background:#071014;
+font-family:Arial;
 touch-action:none;
 user-select:none;
 }
@@ -63,8 +63,8 @@ transform:translateX(-50%);
 width:170px;
 height:100%;
 background:#1a1a1a;
-border-left:2px solid #00bcd4;
-border-right:2px solid #00bcd4;
+border-left:2px solid #00d5ff;
+border-right:2px solid #00d5ff;
 overflow:hidden;
 }
 
@@ -77,7 +77,7 @@ transform:translateX(-50%);
 width:5px;
 height:70px;
 background:#00d5ff;
-opacity:0.5;
+opacity:.5;
 animation:moveLine .5s linear infinite;
 }
 
@@ -95,6 +95,7 @@ width:45px;
 height:80px;
 background:#ff00aa;
 border-radius:10px;
+box-shadow:0 0 10px #ff00aa;
 }
 
 /* ENEMY */
@@ -105,16 +106,28 @@ width:45px;
 height:80px;
 background:#00aaff;
 border-radius:10px;
+box-shadow:0 0 10px #00aaff;
 }
 
 /* OBSTACLE */
 
-.miniObstacle{
+.obstacle{
 position:absolute;
-width:18px;
-height:18px;
+width:45px;
+height:45px;
 background:red;
-border-radius:4px;
+border-radius:8px;
+}
+
+/* COIN */
+
+.coin{
+position:absolute;
+width:20px;
+height:20px;
+border-radius:50%;
+background:gold;
+box-shadow:0 0 10px gold;
 }
 
 /* EXPLOSION */
@@ -124,12 +137,9 @@ position:absolute;
 width:80px;
 height:80px;
 border-radius:50%;
-background:radial-gradient(circle,
-orange,
-red,
-transparent);
-pointer-events:none;
+background:radial-gradient(circle,orange,red,transparent);
 animation:boom .4s linear forwards;
+pointer-events:none;
 z-index:999;
 }
 
@@ -158,13 +168,23 @@ font-size:20px;
 z-index:50;
 }
 
-#botHealthBar{
+#coinBar{
 position:absolute;
 top:40px;
+left:10px;
+color:gold;
+font-size:20px;
+z-index:50;
+}
+
+#botHealthBar{
+position:absolute;
+top:70px;
 left:10px;
 color:#00aaff;
 font-size:20px;
 z-index:50;
+display:none;
 }
 
 /* CONTROLS */
@@ -198,7 +218,7 @@ touch-action:none;
 display:none;
 position:absolute;
 inset:0;
-background:rgba(0,0,0,0.7);
+background:rgba(0,0,0,.7);
 justify-content:center;
 align-items:center;
 z-index:100;
@@ -208,21 +228,21 @@ z-index:100;
 background:#111827;
 padding:25px;
 border-radius:20px;
-text-align:center;
 width:80%;
 max-width:320px;
+text-align:center;
 color:white;
 }
 
 .panel button{
 width:100%;
 padding:14px;
+margin-top:10px;
 border:none;
 border-radius:12px;
 background:#0891b2;
 color:white;
 font-size:18px;
-margin-top:10px;
 }
 
 </style>
@@ -237,25 +257,16 @@ margin-top:10px;
 
 <div id="road"></div>
 
-<div id="healthBar">
-CAN: 3
-</div>
-
-<div id="botHealthBar" style="display:none;">
-BOT CAN: 4
-</div>
+<div id="healthBar">CAN: 3</div>
+<div id="coinBar">COIN: 0</div>
+<div id="botHealthBar">BOT CAN: 4</div>
 
 <div id="car"></div>
 
 <div id="controls">
 
-<button class="btn" id="left">
-◀
-</button>
-
-<button class="btn" id="right">
-▶
-</button>
+<button class="btn" id="left">◀</button>
+<button class="btn" id="right">▶</button>
 
 </div>
 
@@ -263,9 +274,7 @@ BOT CAN: 4
 
 <div class="panel">
 
-<h1 id="winnerText">
-GAME OVER
-</h1>
+<h1 id="winnerText">GAME OVER</h1>
 
 <button onclick="restart()">
 TEKRAR OYNA
@@ -276,7 +285,7 @@ TEKRAR OYNA
 </button>
 
 <button onclick="normalMode()">
-NORMAL OYUNA DÖN
+NORMAL OYUN
 </button>
 
 </div>
@@ -287,7 +296,7 @@ NORMAL OYUNA DÖN
 
 <script>
 
-/* ROAD */
+/* ROAD LINES */
 
 for(let i=0;i<10;i++){
 
@@ -301,15 +310,13 @@ document.getElementById("road").appendChild(line);
 
 }
 
-/* PLAYER */
+/* VARIABLES */
 
 let car=document.getElementById("car");
 
 let x=window.innerWidth/2;
 
 car.style.left=x+"px";
-
-/* STATE */
 
 let left=false;
 let right=false;
@@ -319,28 +326,11 @@ let dead=false;
 let health=3;
 let botHealth=4;
 
+let coins=0;
+
 let mode1v1=false;
 
 let bot=null;
-
-/* EXPLOSION */
-
-function explode(x,y){
-
-let ex=document.createElement("div");
-
-ex.className="explosion";
-
-ex.style.left=x-40+"px";
-ex.style.top=y-40+"px";
-
-document.body.appendChild(ex);
-
-setTimeout(()=>{
-ex.remove();
-},400);
-
-}
 
 /* CONTROLS */
 
@@ -373,17 +363,11 @@ function loop(){
 
 if(!dead){
 
-if(left)
-x-=7;
+if(left) x-=7;
+if(right) x+=7;
 
-if(right)
-x+=7;
-
-if(x<20)
-x=20;
-
-if(x>window.innerWidth-70)
-x=window.innerWidth-70;
+if(x<20) x=20;
+if(x>window.innerWidth-70) x=window.innerWidth-70;
 
 car.style.left=x+"px";
 
@@ -395,80 +379,24 @@ requestAnimationFrame(loop);
 
 loop();
 
-/* NORMAL ENEMY */
+/* EXPLOSION */
 
-function spawnEnemy(){
+function explode(px,py){
 
-if(mode1v1)return;
+let ex=document.createElement("div");
 
-let e=document.createElement("div");
+ex.className="explosion";
 
-e.className="enemy";
+ex.style.left=(px-40)+"px";
+ex.style.top=(py-40)+"px";
 
-e.style.left=
-Math.random()*
-(window.innerWidth-60)+"px";
+document.body.appendChild(ex);
 
-document.body.appendChild(e);
-
-let y=-100;
-
-let m=setInterval(()=>{
-
-if(dead){
-
-e.remove();
-clearInterval(m);
-return;
+setTimeout(()=>{
+ex.remove();
+},400);
 
 }
-
-y+=6;
-
-e.style.top=y+"px";
-
-let a=car.getBoundingClientRect();
-let b=e.getBoundingClientRect();
-
-if(!(a.right<b.left||
-a.left>b.right||
-a.bottom<b.top||
-a.top>b.bottom)){
-
-health--;
-
-document.getElementById("healthBar").innerText=
-"CAN: "+health;
-
-explode(
-a.left+a.width/2,
-a.top+a.height/2
-);
-
-e.remove();
-
-clearInterval(m);
-
-if(health<=0){
-
-gameOver("GAME OVER");
-
-}
-
-}
-
-if(y>window.innerHeight){
-
-e.remove();
-clearInterval(m);
-
-}
-
-},20);
-
-}
-
-setInterval(spawnEnemy,1000);
 
 /* GAME OVER */
 
@@ -490,6 +418,163 @@ location.reload();
 
 }
 
+/* NORMAL MODE */
+
+function normalMode(){
+
+mode1v1=false;
+
+dead=false;
+
+health=3;
+
+document.getElementById("healthBar").innerText="CAN: 3";
+
+document.getElementById("botHealthBar").style.display="none";
+
+document.getElementById("over").style.display="none";
+
+if(bot){
+bot.remove();
+bot=null;
+}
+
+}
+
+/* ENEMY */
+
+function spawnEnemy(){
+
+if(mode1v1) return;
+
+let e=document.createElement("div");
+
+e.className="enemy";
+
+e.style.left=Math.random()*(window.innerWidth-60)+"px";
+
+document.body.appendChild(e);
+
+let y=-100;
+
+let move=setInterval(()=>{
+
+if(dead){
+
+e.remove();
+clearInterval(move);
+return;
+
+}
+
+y+=6;
+
+e.style.top=y+"px";
+
+let a=car.getBoundingClientRect();
+let b=e.getBoundingClientRect();
+
+if(!(a.right<b.left ||
+a.left>b.right ||
+a.bottom<b.top ||
+a.top>b.bottom)){
+
+health--;
+
+document.getElementById("healthBar").innerText=
+"CAN: "+health;
+
+explode(
+a.left+a.width/2,
+a.top+a.height/2
+);
+
+e.remove();
+
+clearInterval(move);
+
+if(health<=0){
+
+gameOver("GAME OVER");
+
+}
+
+}
+
+if(y>window.innerHeight){
+
+e.remove();
+clearInterval(move);
+
+}
+
+},20);
+
+}
+
+setInterval(spawnEnemy,1000);
+
+/* COIN */
+
+function spawnCoin(){
+
+let c=document.createElement("div");
+
+c.className="coin";
+
+c.style.left=
+Math.random()*(window.innerWidth-40)+"px";
+
+document.body.appendChild(c);
+
+let y=-20;
+
+let move=setInterval(()=>{
+
+if(dead){
+
+c.remove();
+clearInterval(move);
+return;
+
+}
+
+y+=5;
+
+c.style.top=y+"px";
+
+let a=car.getBoundingClientRect();
+let b=c.getBoundingClientRect();
+
+if(!(a.right<b.left ||
+a.left>b.right ||
+a.bottom<b.top ||
+a.top>b.bottom)){
+
+coins++;
+
+document.getElementById("coinBar").innerText=
+"COIN: "+coins;
+
+c.remove();
+
+clearInterval(move);
+
+}
+
+if(y>window.innerHeight){
+
+c.remove();
+clearInterval(move);
+
+}
+
+},20);
+
+}
+
+setInterval(spawnCoin,1200);
+
 /* 1V1 */
 
 function start1v1(){
@@ -504,14 +589,13 @@ botHealth=4;
 document.getElementById("healthBar").innerText=
 "CAN: 3";
 
-document.getElementById("botHealthBar").innerText=
-"BOT CAN: 4";
-
 document.getElementById("botHealthBar").style.display=
 "block";
 
-document.getElementById("over").style.display=
-"none";
+document.getElementById("botHealthBar").innerText=
+"BOT CAN: 4";
+
+document.getElementById("over").style.display="none";
 
 /* BOT */
 
@@ -531,15 +615,18 @@ x=(window.innerWidth/2)-60;
 
 car.style.left=x+"px";
 
-/* BOT MOVE */
-
 let botY=window.innerHeight-220;
 
 let botX=(window.innerWidth/2)+15;
 
-setInterval(()=>{
+let botMove=setInterval(()=>{
 
-if(dead)return;
+if(dead || !mode1v1){
+
+clearInterval(botMove);
+return;
+
+}
 
 botY-=3.5;
 
@@ -551,65 +638,40 @@ botX=(window.innerWidth/2)+5;
 if(botX>(window.innerWidth/2)+45)
 botX=(window.innerWidth/2)+45;
 
-bot.style.left=botX+"px";
+if(bot){
 
+bot.style.left=botX+"px";
 bot.style.top=botY+"px";
+
+}
 
 },40);
 
 }
 
-/* NORMAL MODE */
-
-function normalMode(){
-
-mode1v1=false;
-
-dead=false;
-
-health=3;
-
-document.getElementById("healthBar").innerText=
-"CAN: 3";
-
-document.getElementById("botHealthBar").style.display=
-"none";
-
-document.getElementById("over").style.display=
-"none";
-
-if(bot){
-
-bot.remove();
-
-}
-
-}
-
 /* OBSTACLE */
 
-function spawnMiniObstacle(){
+function spawnObstacle(){
 
-if(!mode1v1)return;
+if(!mode1v1) return;
 
 let o=document.createElement("div");
 
-o.className="miniObstacle";
+o.className="obstacle";
 
 o.style.left=
-Math.random()*
-(window.innerWidth-40)+"px";
+Math.random()*(window.innerWidth-50)+"px";
 
 document.body.appendChild(o);
 
-let y=-20;
+let y=-40;
 
-let m=setInterval(()=>{
+let move=setInterval(()=>{
 
 if(dead){
 
 o.remove();
-clearInterval(m);
+clearInterval(move);
 return;
 
 }
@@ -618,14 +680,14 @@ y+=7;
 
 o.style.top=y+"px";
 
-/* PLAYER HIT */
-
 let a=car.getBoundingClientRect();
 let b=o.getBoundingClientRect();
 
-if(!(a.right<b.left||
-a.left>b.right||
-a.bottom<b.top||
+/* PLAYER HIT */
+
+if(!(a.right<b.left ||
+a.left>b.right ||
+a.bottom<b.top ||
 a.top>b.bottom)){
 
 health--;
@@ -640,7 +702,7 @@ a.top+a.height/2
 
 o.remove();
 
-clearInterval(m);
+clearInterval(move);
 
 if(health<=0){
 
@@ -656,9 +718,9 @@ if(bot){
 
 let bb=bot.getBoundingClientRect();
 
-if(!(bb.right<b.left||
-bb.left>b.right||
-bb.bottom<b.top||
+if(!(bb.right<b.left ||
+bb.left>b.right ||
+bb.bottom<b.top ||
 bb.top>b.bottom)){
 
 botHealth--;
@@ -673,7 +735,7 @@ bb.top+bb.height/2
 
 o.remove();
 
-clearInterval(m);
+clearInterval(move);
 
 if(botHealth<=0){
 
@@ -688,7 +750,7 @@ gameOver("SEN KAZANDIN");
 if(y>window.innerHeight){
 
 o.remove();
-clearInterval(m);
+clearInterval(move);
 
 }
 
@@ -696,7 +758,7 @@ clearInterval(m);
 
 }
 
-setInterval(spawnMiniObstacle,500);
+setInterval(spawnObstacle,500);
 
 </script>
 
@@ -706,7 +768,7 @@ setInterval(spawnMiniObstacle,500);
 
 @app.route("/")
 def home():
-    return render_template_string(html)
+    return render_template_string(HTML)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
