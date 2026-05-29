@@ -1,7 +1,3 @@
-# requirements.txt
-# flask
-# gunicorn
-
 from flask import Flask, render_template_string
 import os
 
@@ -12,7 +8,9 @@ HTML = """
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
 <title>Neon Race</title>
 
 <style>
@@ -23,6 +21,8 @@ overflow:hidden;
 background:#071014;
 font-family:Arial;
 touch-action:none;
+width:100vw;
+height:100vh;
 }
 
 /* LOGIN */
@@ -64,7 +64,7 @@ font-size:20px;
 position:absolute;
 left:50%;
 transform:translateX(-50%);
-width:430px;
+width:min(92vw,430px);
 height:100%;
 background:#1d1d1d;
 border-left:3px solid #00d5ff;
@@ -92,18 +92,6 @@ display:none;
 opacity:0.7;
 }
 
-/* PLAYER */
-
-#playerName{
-position:absolute;
-top:10px;
-right:10px;
-color:white;
-font-size:20px;
-z-index:50;
-display:none;
-}
-
 /* UI */
 
 #ui{
@@ -111,10 +99,22 @@ position:absolute;
 top:10px;
 left:10px;
 color:white;
-font-size:22px;
+font-size:18px;
 z-index:50;
 display:none;
-line-height:40px;
+line-height:32px;
+}
+
+/* PLAYER */
+
+#playerName{
+position:absolute;
+top:10px;
+right:10px;
+color:white;
+font-size:18px;
+z-index:50;
+display:none;
 }
 
 /* CAR */
@@ -122,8 +122,8 @@ line-height:40px;
 #car{
 position:absolute;
 bottom:120px;
-width:68px;
-height:95px;
+width:60px;
+height:88px;
 border-radius:14px;
 display:none;
 
@@ -146,8 +146,8 @@ content:'';
 position:absolute;
 left:10px;
 top:12px;
-width:48px;
-height:20px;
+width:40px;
+height:18px;
 background:#87cefa;
 border-radius:6px;
 }
@@ -157,7 +157,7 @@ content:'';
 position:absolute;
 left:18px;
 bottom:10px;
-width:32px;
+width:25px;
 height:8px;
 background:#222;
 border-radius:4px;
@@ -193,36 +193,42 @@ box-shadow:0 0 15px gold;
 /* CONTROLS */
 
 #controls{
-position:absolute;
-bottom:25px;
+position:fixed;
+bottom:20px;
+left:0;
 width:100%;
 display:none;
-justify-content:space-around;
-align-items:center;
+justify-content:space-between;
+align-items:flex-end;
+padding:0 18px;
+box-sizing:border-box;
 z-index:100;
+pointer-events:none;
 }
 
 .leftArea{
 display:flex;
 flex-direction:column;
 align-items:center;
-gap:10px;
+gap:8px;
+pointer-events:auto;
 }
 
 .btn{
-width:100px;
-height:100px;
+width:82px;
+height:82px;
 border:none;
 border-radius:50%;
 background:rgba(255,255,255,0.15);
-font-size:38px;
+font-size:34px;
 color:white;
+pointer-events:auto;
 }
 
 #jump{
-width:75px;
-height:75px;
-font-size:30px;
+width:58px;
+height:58px;
+font-size:26px;
 }
 
 /* GAME OVER */
@@ -266,17 +272,17 @@ GİRİŞ
 
 <div id="ui">
 
-❤️ Can:
+❤️ CAN:
 <span id="hp">5</span>
 
 <br>
 
-🏆 Skor:
+🏆 SKOR:
 <span id="score">0</span>
 
 <br>
 
-🪙 Coin:
+🪙 COIN:
 <span id="coin">0</span>
 
 </div>
@@ -348,7 +354,7 @@ onclick="start1v1()">
 
 <script>
 
-/* AUDIO */
+/* SOUND */
 
 function playSound(freq,duration){
 
@@ -794,8 +800,6 @@ a.top>b.bottom)
 
 hp--;
 
-playSound(100,0.2);
-
 document.getElementById("hp")
 .innerText=hp;
 
@@ -977,5 +981,5 @@ def home():
     return render_template_string(HTML)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT",10000))
     app.run(host="0.0.0.0", port=port)
