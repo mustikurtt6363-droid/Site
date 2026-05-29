@@ -3,8 +3,6 @@ import os
 
 app = Flask(__name__)
 
-USER = "Musti"
-
 # ================= LOGIN =================
 login_html = """
 <!DOCTYPE html>
@@ -12,7 +10,7 @@ login_html = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Giriş</title>
+<title>Login</title>
 <style>
 body{
 margin:0;
@@ -62,13 +60,14 @@ font-size:18px;
 </form>
 
 <p class="error">{{error}}</p>
+
 </div>
 
 </body>
 </html>
 """
 
-# ================= CALC + GAME =================
+# ================= GAME =================
 game_html = """
 <!DOCTYPE html>
 <html>
@@ -76,7 +75,7 @@ game_html = """
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>System</title>
+<title>Game</title>
 
 <style>
 html,body{
@@ -95,12 +94,21 @@ position:fixed;
 /* ================= CALC ================= */
 #calc{
 position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
+top:0;
+left:0;
+width:100%;
+height:100%;
+display:flex;
+justify-content:center;
+align-items:center;
+background:#111;
+z-index:10;
+}
+
+#box{
 width:90%;
 max-width:360px;
-background:#111;
+background:#222;
 padding:20px;
 border-radius:15px;
 }
@@ -118,12 +126,11 @@ grid-template-columns:repeat(4,1fr);
 gap:6px;
 }
 
-.grid button{
+button{
 padding:15px;
 border:none;
-background:#222;
+background:#444;
 color:white;
-font-size:18px;
 }
 
 /* ================= GAME ================= */
@@ -137,8 +144,7 @@ height:100%;
 background:#555;
 }
 
-/* ROAD */
-.road{
+#road{
 position:absolute;
 left:50%;
 transform:translateX(-50%);
@@ -147,7 +153,6 @@ height:100%;
 background:#2b2b2b;
 }
 
-/* LINES */
 .line{
 position:absolute;
 left:50%;
@@ -155,15 +160,8 @@ transform:translateX(-50%);
 width:6px;
 height:80px;
 background:white;
-animation:move 1s linear infinite;
 }
 
-@keyframes move{
-0%{top:-100px;}
-100%{top:120vh;}
-}
-
-/* CAR */
 #car{
 position:absolute;
 bottom:120px;
@@ -174,17 +172,14 @@ background:red;
 border-radius:8px;
 }
 
-/* ENEMY */
 .enemy{
 position:absolute;
 width:50px;
 height:90px;
 background:yellow;
 top:-120px;
-border-radius:8px;
 }
 
-/* SCORE */
 #score{
 position:absolute;
 top:10px;
@@ -193,30 +188,25 @@ color:white;
 font-size:22px;
 }
 
-/* CONTROLS (BOTTOM FIXED) */
 #controls{
 position:absolute;
-bottom:0;
-left:0;
+bottom:20px;
 width:100%;
 display:flex;
 justify-content:space-between;
-padding:15px 25px;
-box-sizing:border-box;
+padding:0 30px;
 }
 
 .btn{
-width:90px;
-height:90px;
+width:80px;
+height:80px;
 border-radius:50%;
 border:none;
-background:rgba(255,255,255,0.25);
+font-size:35px;
+background:rgba(255,255,255,0.3);
 color:white;
-font-size:40px;
-touch-action:none;
 }
 
-/* GAME OVER */
 #over{
 display:none;
 position:absolute;
@@ -231,11 +221,13 @@ text-align:center;
 
 <body>
 
-<!-- ================= CALC ================= -->
+<!-- CALC -->
 <div id="calc">
+<div id="box">
 <input id="ekran">
 
 <div class="grid">
+
 <button onclick="add('7')">7</button>
 <button onclick="add('8')">8</button>
 <button onclick="add('9')">9</button>
@@ -254,14 +246,15 @@ text-align:center;
 <button onclick="add('0')">0</button>
 <button onclick="run()">ENTER</button>
 <button onclick="clearE()" style="grid-column:span 2;background:red;">C</button>
+
+</div>
 </div>
 </div>
 
-<!-- ================= GAME ================= -->
+<!-- GAME -->
 <div id="game">
 
-<div class="road"></div>
-
+<div id="road"></div>
 <div id="score">0</div>
 <div id="car"></div>
 
@@ -288,6 +281,7 @@ function clearE(){
 document.getElementById("ekran").value="";
 }
 
+/* IMPORTANT FIX */
 function run(){
 let v=document.getElementById("ekran").value;
 
@@ -303,9 +297,16 @@ document.getElementById("ekran").value="ERROR";
 }
 }
 
-/* GAME */
+/* SWITCH FIX (CRITICAL) */
 let calc=document.getElementById("calc");
 let game=document.getElementById("game");
+
+function startGame(){
+calc.style.display="none";
+game.style.display="block";
+}
+
+/* GAME */
 let car=document.getElementById("car");
 let over=document.getElementById("over");
 
@@ -313,12 +314,6 @@ let x=window.innerWidth/2;
 let left=false,right=false;
 let dead=false;
 let score=0;
-
-/* START */
-function startGame(){
-calc.style.display="none";
-game.style.display="block";
-}
 
 /* SCORE */
 setInterval(()=>{
@@ -357,9 +352,10 @@ clearInterval(m);
 
 },20);
 }
+
 setInterval(spawn,800);
 
-/* CONTROLS (HOLD SMOOTH) */
+/* CONTROLS */
 function hold(btn,dir){
 btn.addEventListener("touchstart",(e)=>{
 e.preventDefault();
@@ -377,7 +373,7 @@ else right=false;
 hold(document.getElementById("left"),"l");
 hold(document.getElementById("right"),"r");
 
-/* MOVE LOOP */
+/* MOVE */
 function loop(){
 if(game.style.display==="block"){
 if(left)x-=7;
@@ -398,14 +394,13 @@ loop();
 </html>
 """
 
-# ================= ROUTES =================
 @app.route("/", methods=["GET","POST"])
 def login():
     error=""
     if request.method=="POST":
-        u=request.form.get("user")
+        user=request.form.get("user")
 
-        if u=="Musti":
+        if user=="Musti":
             return redirect(url_for("game"))
         else:
             error="Hatalı kullanıcı adı"
