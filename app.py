@@ -9,7 +9,7 @@ html = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Car Game</title>
+<title>Game</title>
 
 <style>
 html,body{
@@ -20,16 +20,15 @@ height:100%;
 overflow:hidden;
 font-family:Arial;
 background:#222;
+position:fixed;
 touch-action:none;
 user-select:none;
-position:fixed;
 }
 
-/* ================= CALC ================= */
+/* ================= FULL CALC ================= */
 #calc{
-position:absolute;
-width:100%;
-height:100%;
+position:fixed;
+inset:0;
 display:flex;
 justify-content:center;
 align-items:center;
@@ -38,8 +37,8 @@ z-index:10;
 }
 
 #box{
-width:90%;
-max-width:360px;
+width:92%;
+max-width:380px;
 background:#222;
 padding:20px;
 border-radius:15px;
@@ -66,15 +65,15 @@ padding:15px;
 border:none;
 background:#444;
 color:white;
-font-size:18px;
 border-radius:8px;
+font-size:18px;
 }
 
 #startBtn{
 display:none;
 margin-top:10px;
-padding:15px;
 width:100%;
+padding:15px;
 background:#0d6efd;
 border:none;
 color:white;
@@ -86,10 +85,7 @@ border-radius:10px;
 #game{
 display:none;
 position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
+inset:0;
 background:#555;
 }
 
@@ -133,7 +129,7 @@ font-size:22px;
 z-index:5;
 }
 
-/* ================= CONTROLS FIX ================= */
+/* ================= CONTROLS (SOLA ÇEKİLDİ) ================= */
 #controls{
 position:absolute;
 bottom:15px;
@@ -141,24 +137,20 @@ left:0;
 width:100%;
 display:flex;
 justify-content:space-between;
-align-items:center;
-padding:0 15px;
+padding:0 35px; /* 🔥 SOLA İÇERİ ÇEKİLDİ */
 box-sizing:border-box;
 z-index:50;
 }
 
 .btn{
-width:75px;
-height:75px;
+width:70px;
+height:70px;
 border-radius:50%;
 border:none;
 font-size:32px;
 background:rgba(255,255,255,0.3);
 color:white;
 touch-action:none;
-display:flex;
-justify-content:center;
-align-items:center;
 }
 
 /* GAME OVER */
@@ -181,7 +173,7 @@ z-index:100;
 <div id="calc">
 <div id="box">
 
-<input id="ekran" placeholder="Hesap">
+<input id="ekran">
 
 <div class="grid">
 
@@ -201,7 +193,7 @@ z-index:100;
 <button onclick="add('+')">+</button>
 
 <button onclick="add('0')">0</button>
-<button onclick="run()">OK</button>
+<button onclick="check()">OK</button>
 <button onclick="clearE()" style="grid-column:span 2;background:red;">C</button>
 
 </div>
@@ -226,14 +218,14 @@ z-index:100;
 
 <div id="over">
 <h1>GAME OVER</h1>
-<button onclick="location.reload()">RESTART</button>
+<button onclick="restart()">RESTART</button>
 </div>
 
 </div>
 
 <script>
 
-/* ================= CALC ================= */
+/* CALC */
 function add(v){
 document.getElementById("ekran").value+=v;
 }
@@ -243,7 +235,7 @@ document.getElementById("ekran").value="";
 }
 
 /* 2727 SYSTEM */
-function run(){
+function check(){
 let v=document.getElementById("ekran").value;
 
 if(v==="2727"){
@@ -258,7 +250,7 @@ document.getElementById("ekran").value="ERROR";
 }
 }
 
-/* START GAME */
+/* SWITCH */
 let calc=document.getElementById("calc");
 let game=document.getElementById("game");
 let car=document.getElementById("car");
@@ -269,11 +261,20 @@ calc.style.display="none";
 game.style.display="block";
 }
 
-/* ================= GAME LOGIC ================= */
+/* GAME STATE */
 let x=window.innerWidth/2;
 let left=false,right=false;
 let dead=false;
 let score=0;
+
+/* RESTART */
+function restart(){
+dead=false;
+score=0;
+over.style.display="none";
+x=window.innerWidth/2;
+car.style.left=x+"px";
+}
 
 /* SCORE */
 setInterval(()=>{
@@ -285,6 +286,8 @@ document.getElementById("score").innerText=score;
 
 /* ENEMIES */
 function spawn(){
+if(game.style.display!=="block") return;
+
 let e=document.createElement("div");
 e.className="enemy";
 e.style.left=Math.random()*(window.innerWidth-60)+"px";
@@ -293,6 +296,12 @@ document.body.appendChild(e);
 let y=-120;
 
 let m=setInterval(()=>{
+
+if(dead){
+e.remove();
+clearInterval(m);
+return;
+}
 
 y+=6;
 e.style.top=y+"px";
@@ -315,8 +324,8 @@ clearInterval(m);
 
 setInterval(spawn,800);
 
-/* CONTROLS FIX (NO OUTSIDE) */
-function hold(btn,dir){
+/* CONTROLS */
+function bind(btn,dir){
 btn.addEventListener("touchstart",(e)=>{
 e.preventDefault();
 if(dir==="l")left=true;
@@ -330,10 +339,10 @@ else right=false;
 });
 }
 
-hold(document.getElementById("left"),"l");
-hold(document.getElementById("right"),"r");
+bind(document.getElementById("left"),"l");
+bind(document.getElementById("right"),"r");
 
-/* MOVE LOOP */
+/* MOVE */
 function loop(){
 if(game.style.display==="block"){
 if(left)x-=7;
