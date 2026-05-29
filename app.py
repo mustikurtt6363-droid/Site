@@ -10,7 +10,7 @@ html = """
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Neon 1V1 Race</title>
+<title>Neon Car Game</title>
 
 <style>
 
@@ -68,7 +68,7 @@ border-right:2px solid #00bcd4;
 overflow:hidden;
 }
 
-/* LINES */
+/* ROAD LINE */
 
 .lane{
 position:absolute;
@@ -78,7 +78,7 @@ width:5px;
 height:70px;
 background:#00d5ff;
 opacity:0.5;
-animation:moveLine 0.5s linear infinite;
+animation:moveLine .5s linear infinite;
 }
 
 @keyframes moveLine{
@@ -97,7 +97,7 @@ background:#ff00aa;
 border-radius:10px;
 }
 
-/* BOT */
+/* ENEMY */
 
 .enemy{
 position:absolute;
@@ -107,7 +107,7 @@ background:#00aaff;
 border-radius:10px;
 }
 
-/* MINI OBSTACLE */
+/* OBSTACLE */
 
 .miniObstacle{
 position:absolute;
@@ -117,7 +117,37 @@ background:red;
 border-radius:4px;
 }
 
-/* HEALTH */
+/* EXPLOSION */
+
+.explosion{
+position:absolute;
+width:80px;
+height:80px;
+border-radius:50%;
+background:radial-gradient(circle,
+orange,
+red,
+transparent);
+pointer-events:none;
+animation:boom .4s linear forwards;
+z-index:999;
+}
+
+@keyframes boom{
+
+0%{
+transform:scale(.3);
+opacity:1;
+}
+
+100%{
+transform:scale(2.5);
+opacity:0;
+}
+
+}
+
+/* UI */
 
 #healthBar{
 position:absolute;
@@ -160,8 +190,6 @@ background:rgba(255,255,255,0.12);
 color:white;
 font-size:40px;
 touch-action:none;
-will-change:transform;
-transform:translateZ(0);
 }
 
 /* GAME OVER */
@@ -210,10 +238,10 @@ margin-top:10px;
 <div id="road"></div>
 
 <div id="healthBar">
-CAN: 4
+CAN: 3
 </div>
 
-<div id="botHealthBar">
+<div id="botHealthBar" style="display:none;">
 BOT CAN: 4
 </div>
 
@@ -243,6 +271,10 @@ GAME OVER
 TEKRAR OYNA
 </button>
 
+<button onclick="start1v1()">
+1V1
+</button>
+
 <button onclick="normalMode()">
 NORMAL OYUNA DÖN
 </button>
@@ -255,7 +287,7 @@ NORMAL OYUNA DÖN
 
 <script>
 
-/* ROAD LINES */
+/* ROAD */
 
 for(let i=0;i<10;i++){
 
@@ -273,21 +305,9 @@ document.getElementById("road").appendChild(line);
 
 let car=document.getElementById("car");
 
-let x=(window.innerWidth/2)-60;
+let x=window.innerWidth/2;
 
 car.style.left=x+"px";
-
-/* BOT */
-
-let bot=document.createElement("div");
-
-bot.className="enemy";
-
-bot.style.left=(window.innerWidth/2)+15+"px";
-
-bot.style.top=(window.innerHeight-220)+"px";
-
-document.body.appendChild(bot);
 
 /* STATE */
 
@@ -296,100 +316,56 @@ let right=false;
 
 let dead=false;
 
-let health=4;
+let health=3;
 let botHealth=4;
 
-/* BOT MOVE */
+let mode1v1=false;
 
-let botY=window.innerHeight-220;
+let bot=null;
 
-let botX=(window.innerWidth/2)+15;
+/* EXPLOSION */
 
-setInterval(()=>{
+function explode(x,y){
 
-if(dead)return;
+let ex=document.createElement("div");
 
-/* SPEED */
-botY-=3.5;
+ex.className="explosion";
 
-/* RANDOM */
-botX += (Math.random()-0.5)*6;
+ex.style.left=x-40+"px";
+ex.style.top=y-40+"px";
 
-/* LIMIT */
+document.body.appendChild(ex);
 
-if(botX<(window.innerWidth/2)+5)
-botX=(window.innerWidth/2)+5;
+setTimeout(()=>{
+ex.remove();
+},400);
 
-if(botX>(window.innerWidth/2)+45)
-botX=(window.innerWidth/2)+45;
-
-bot.style.left=botX+"px";
-
-bot.style.top=botY+"px";
-
-},40);
+}
 
 /* CONTROLS */
 
 const leftBtn=document.getElementById("left");
 const rightBtn=document.getElementById("right");
 
-function pressLeft(e){
+leftBtn.addEventListener("touchstart",(e)=>{
 e.preventDefault();
 left=true;
-}
+},{passive:false});
 
-function releaseLeft(e){
+leftBtn.addEventListener("touchend",(e)=>{
 e.preventDefault();
 left=false;
-}
+},{passive:false});
 
-function pressRight(e){
+rightBtn.addEventListener("touchstart",(e)=>{
 e.preventDefault();
 right=true;
-}
+},{passive:false});
 
-function releaseRight(e){
+rightBtn.addEventListener("touchend",(e)=>{
 e.preventDefault();
 right=false;
-}
-
-/* LEFT */
-
-leftBtn.addEventListener(
-"touchstart",
-pressLeft,
-{passive:false}
-);
-
-leftBtn.addEventListener(
-"touchend",
-releaseLeft,
-{passive:false}
-);
-
-/* RIGHT */
-
-rightBtn.addEventListener(
-"touchstart",
-pressRight,
-{passive:false}
-);
-
-rightBtn.addEventListener(
-"touchend",
-releaseRight,
-{passive:false}
-);
-
-/* EXTRA FIX */
-
-window.addEventListener("touchend",()=>{
-
-left=false;
-right=false;
-
-});
+},{passive:false});
 
 /* MOVE */
 
@@ -419,9 +395,202 @@ requestAnimationFrame(loop);
 
 loop();
 
-/* MINI OBSTACLE */
+/* NORMAL ENEMY */
+
+function spawnEnemy(){
+
+if(mode1v1)return;
+
+let e=document.createElement("div");
+
+e.className="enemy";
+
+e.style.left=
+Math.random()*
+(window.innerWidth-60)+"px";
+
+document.body.appendChild(e);
+
+let y=-100;
+
+let m=setInterval(()=>{
+
+if(dead){
+
+e.remove();
+clearInterval(m);
+return;
+
+}
+
+y+=6;
+
+e.style.top=y+"px";
+
+let a=car.getBoundingClientRect();
+let b=e.getBoundingClientRect();
+
+if(!(a.right<b.left||
+a.left>b.right||
+a.bottom<b.top||
+a.top>b.bottom)){
+
+health--;
+
+document.getElementById("healthBar").innerText=
+"CAN: "+health;
+
+explode(
+a.left+a.width/2,
+a.top+a.height/2
+);
+
+e.remove();
+
+clearInterval(m);
+
+if(health<=0){
+
+gameOver("GAME OVER");
+
+}
+
+}
+
+if(y>window.innerHeight){
+
+e.remove();
+clearInterval(m);
+
+}
+
+},20);
+
+}
+
+setInterval(spawnEnemy,1000);
+
+/* GAME OVER */
+
+function gameOver(text){
+
+dead=true;
+
+document.getElementById("winnerText").innerText=text;
+
+document.getElementById("over").style.display="flex";
+
+}
+
+/* RESTART */
+
+function restart(){
+
+location.reload();
+
+}
+
+/* 1V1 */
+
+function start1v1(){
+
+mode1v1=true;
+
+dead=false;
+
+health=3;
+botHealth=4;
+
+document.getElementById("healthBar").innerText=
+"CAN: 3";
+
+document.getElementById("botHealthBar").innerText=
+"BOT CAN: 4";
+
+document.getElementById("botHealthBar").style.display=
+"block";
+
+document.getElementById("over").style.display=
+"none";
+
+/* BOT */
+
+bot=document.createElement("div");
+
+bot.className="enemy";
+
+bot.style.left=(window.innerWidth/2)+15+"px";
+
+bot.style.top=(window.innerHeight-220)+"px";
+
+document.body.appendChild(bot);
+
+/* PLAYER */
+
+x=(window.innerWidth/2)-60;
+
+car.style.left=x+"px";
+
+/* BOT MOVE */
+
+let botY=window.innerHeight-220;
+
+let botX=(window.innerWidth/2)+15;
+
+setInterval(()=>{
+
+if(dead)return;
+
+botY-=3.5;
+
+botX += (Math.random()-0.5)*6;
+
+if(botX<(window.innerWidth/2)+5)
+botX=(window.innerWidth/2)+5;
+
+if(botX>(window.innerWidth/2)+45)
+botX=(window.innerWidth/2)+45;
+
+bot.style.left=botX+"px";
+
+bot.style.top=botY+"px";
+
+},40);
+
+}
+
+/* NORMAL MODE */
+
+function normalMode(){
+
+mode1v1=false;
+
+dead=false;
+
+health=3;
+
+document.getElementById("healthBar").innerText=
+"CAN: 3";
+
+document.getElementById("botHealthBar").style.display=
+"none";
+
+document.getElementById("over").style.display=
+"none";
+
+if(bot){
+
+bot.remove();
+
+}
+
+}
+
+/* OBSTACLE */
 
 function spawnMiniObstacle(){
+
+if(!mode1v1)return;
 
 let o=document.createElement("div");
 
@@ -441,7 +610,6 @@ if(dead){
 
 o.remove();
 clearInterval(m);
-
 return;
 
 }
@@ -465,6 +633,11 @@ health--;
 document.getElementById("healthBar").innerText=
 "CAN: "+health;
 
+explode(
+a.left+a.width/2,
+a.top+a.height/2
+);
+
 o.remove();
 
 clearInterval(m);
@@ -479,6 +652,8 @@ gameOver("BOT KAZANDI");
 
 /* BOT HIT */
 
+if(bot){
+
 let bb=bot.getBoundingClientRect();
 
 if(!(bb.right<b.left||
@@ -490,6 +665,11 @@ botHealth--;
 
 document.getElementById("botHealthBar").innerText=
 "BOT CAN: "+botHealth;
+
+explode(
+bb.left+bb.width/2,
+bb.top+bb.height/2
+);
 
 o.remove();
 
@@ -503,10 +683,11 @@ gameOver("SEN KAZANDIN");
 
 }
 
+}
+
 if(y>window.innerHeight){
 
 o.remove();
-
 clearInterval(m);
 
 }
@@ -516,34 +697,6 @@ clearInterval(m);
 }
 
 setInterval(spawnMiniObstacle,500);
-
-/* GAME OVER */
-
-function gameOver(text){
-
-dead=true;
-
-document.getElementById("winnerText").innerText=text;
-
-document.getElementById("over").style.display="flex";
-
-}
-
-/* RESTART */
-
-function restart(){
-
-location.reload();
-
-}
-
-/* NORMAL MODE */
-
-function normalMode(){
-
-location.reload();
-
-}
 
 </script>
 
