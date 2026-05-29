@@ -8,9 +8,7 @@ HTML = """
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Neon Race</title>
 
 <style>
@@ -62,7 +60,7 @@ font-size:20px;
 position:absolute;
 left:50%;
 transform:translateX(-50%);
-width:320px;
+width:430px;
 height:100%;
 background:#1d1d1d;
 border-left:3px solid #00d5ff;
@@ -102,6 +100,18 @@ z-index:50;
 display:none;
 }
 
+/* UI */
+
+#ui{
+position:absolute;
+top:10px;
+left:10px;
+color:white;
+font-size:20px;
+z-index:50;
+display:none;
+}
+
 /* CAR */
 
 #car{
@@ -111,14 +121,12 @@ width:50px;
 height:85px;
 border-radius:12px;
 display:none;
-
 background:
 linear-gradient(
 to bottom,
 #ff00aa,
 #ff66cc
 );
-
 box-shadow:0 0 15px #ff00aa;
 }
 
@@ -148,9 +156,9 @@ border-radius:4px;
 
 .enemy{
 position:absolute;
-width:50px;
-height:85px;
-border-radius:12px;
+width:40px;
+height:65px;
+border-radius:10px;
 
 background:
 linear-gradient(
@@ -164,23 +172,11 @@ to bottom,
 
 .coin{
 position:absolute;
-width:26px;
-height:26px;
+width:24px;
+height:24px;
 border-radius:50%;
 background:gold;
 box-shadow:0 0 15px gold;
-}
-
-/* UI */
-
-#ui{
-position:absolute;
-top:10px;
-left:10px;
-color:white;
-font-size:20px;
-z-index:50;
-display:none;
 }
 
 /* CONTROLS */
@@ -247,17 +243,17 @@ GİRİŞ
 
 <div id="ui">
 
-CAN:
-<span id="hp">3</span>
-
-|
-
-COIN:
+🪙
 <span id="coin">0</span>
 
 |
 
-SKOR:
+❤️
+<span id="hp">3</span>
+
+|
+
+🏆
 <span id="score">0</span>
 
 </div>
@@ -271,13 +267,11 @@ SKOR:
 
 <div id="controls">
 
-<button class="btn"
-id="left">
+<button class="btn" id="left">
 ◀
 </button>
 
-<button class="btn"
-id="right">
+<button class="btn" id="right">
 ▶
 </button>
 
@@ -478,14 +472,14 @@ function loop(){
 
 if(!dead){
 
-if(left) x-=6;
-if(right) x+=6;
+if(left) x-=7;
+if(right) x+=7;
 
-if(x<window.innerWidth/2-150)
-x=window.innerWidth/2-150;
+if(x<window.innerWidth/2-205)
+x=window.innerWidth/2-205;
 
-if(x>window.innerWidth/2+100)
-x=window.innerWidth/2+100;
+if(x>window.innerWidth/2+150)
+x=window.innerWidth/2+150;
 
 car.style.left=x+"px";
 
@@ -573,8 +567,8 @@ document.createElement("div");
 e.className="enemy";
 
 e.style.left=
-(window.innerWidth/2-150+
-Math.random()*250)+"px";
+(window.innerWidth/2-205+
+Math.random()*350)+"px";
 
 document.body.appendChild(e);
 
@@ -591,7 +585,7 @@ return;
 
 }
 
-y+=6;
+y+=5;
 
 e.style.top=y+"px";
 
@@ -653,7 +647,7 @@ clearInterval(t);
 
 }
 
-setInterval(spawnEnemy,900);
+setInterval(spawnEnemy,1000);
 
 /* COIN */
 
@@ -667,8 +661,8 @@ document.createElement("div");
 c.className="coin";
 
 c.style.left=
-(window.innerWidth/2-150+
-Math.random()*250)+"px";
+(window.innerWidth/2-205+
+Math.random()*350)+"px";
 
 document.body.appendChild(c);
 
@@ -686,7 +680,7 @@ return;
 
 }
 
-y+=5;
+y+=4;
 
 c.style.top=y+"px";
 
@@ -724,7 +718,7 @@ clearInterval(t);
 
 }
 
-setInterval(spawnCoin,1200);
+setInterval(spawnCoin,1400);
 
 /* BOT */
 
@@ -736,7 +730,7 @@ document.createElement("div");
 bot.className="enemy";
 
 bot.style.left=
-(window.innerWidth/2+50)+"px";
+(window.innerWidth/2+80)+"px";
 
 bot.style.top=
 (window.innerHeight-240)+"px";
@@ -747,7 +741,7 @@ let by=
 window.innerHeight-240;
 
 let bx=
-window.innerWidth/2+50;
+window.innerWidth/2+80;
 
 setInterval(()=>{
 
@@ -759,19 +753,19 @@ return;
 
 }
 
-/* DAHA YAVAŞ BOT */
+/* ÇOK YAVAŞ BOT */
 
-by-=1.2;
+by-=0.7;
 
 /* AZ HAREKET */
 
-bx+=(Math.random()-0.5)*0.7;
+bx+=(Math.random()-0.5)*0.3;
 
-if(bx<window.innerWidth/2-150)
-bx=window.innerWidth/2-150;
+if(bx<window.innerWidth/2-205)
+bx=window.innerWidth/2-205;
 
-if(bx>window.innerWidth/2+100)
-bx=window.innerWidth/2+100;
+if(bx>window.innerWidth/2+150)
+bx=window.innerWidth/2+150;
 
 bot.style.top=by+"px";
 bot.style.left=bx+"px";
