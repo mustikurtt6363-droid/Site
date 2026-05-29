@@ -1,81 +1,15 @@
-from flask import Flask, request, render_template_string, redirect, url_for
+from flask import Flask, render_template_string
 import os
 
 app = Flask(__name__)
 
-# ================= LOGIN =================
-login_html = """
+html = """
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login</title>
-<style>
-body{
-margin:0;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:#0b1a2b;
-font-family:Arial;
-}
-
-.box{
-width:90%;
-max-width:360px;
-background:#13233d;
-padding:25px;
-border-radius:20px;
-color:white;
-text-align:center;
-}
-
-input,button{
-width:100%;
-padding:12px;
-margin-top:10px;
-border:none;
-border-radius:10px;
-}
-
-button{
-background:#0d6efd;
-color:white;
-font-size:18px;
-}
-
-.error{color:red;margin-top:10px;}
-</style>
-</head>
-<body>
-
-<div class="box">
-<h2>Giriş</h2>
-
-<form method="POST">
-<input name="user" placeholder="Kullanıcı adı">
-<button>Giriş</button>
-</form>
-
-<p class="error">{{error}}</p>
-
-</div>
-
-</body>
-</html>
-"""
-
-# ================= GAME =================
-game_html = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-<title>Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Car Game</title>
 
 <style>
 html,body{
@@ -84,8 +18,8 @@ padding:0;
 width:100%;
 height:100%;
 overflow:hidden;
-background:#333;
 font-family:Arial;
+background:#222;
 touch-action:none;
 user-select:none;
 position:fixed;
@@ -94,8 +28,6 @@ position:fixed;
 /* ================= CALC ================= */
 #calc{
 position:absolute;
-top:0;
-left:0;
 width:100%;
 height:100%;
 display:flex;
@@ -118,19 +50,36 @@ width:100%;
 padding:15px;
 font-size:22px;
 text-align:right;
+border:none;
+outline:none;
 }
 
 .grid{
 display:grid;
 grid-template-columns:repeat(4,1fr);
 gap:6px;
+margin-top:10px;
 }
 
-button{
+.grid button{
 padding:15px;
 border:none;
 background:#444;
 color:white;
+font-size:18px;
+border-radius:8px;
+}
+
+#startBtn{
+display:none;
+margin-top:10px;
+padding:15px;
+width:100%;
+background:#0d6efd;
+border:none;
+color:white;
+font-size:18px;
+border-radius:10px;
 }
 
 /* ================= GAME ================= */
@@ -144,6 +93,7 @@ height:100%;
 background:#555;
 }
 
+/* ROAD */
 #road{
 position:absolute;
 left:50%;
@@ -153,15 +103,7 @@ height:100%;
 background:#2b2b2b;
 }
 
-.line{
-position:absolute;
-left:50%;
-transform:translateX(-50%);
-width:6px;
-height:80px;
-background:white;
-}
-
+/* CAR */
 #car{
 position:absolute;
 bottom:120px;
@@ -172,6 +114,7 @@ background:red;
 border-radius:8px;
 }
 
+/* ENEMY */
 .enemy{
 position:absolute;
 width:50px;
@@ -180,33 +123,45 @@ background:yellow;
 top:-120px;
 }
 
+/* SCORE */
 #score{
 position:absolute;
 top:10px;
 left:10px;
 color:white;
 font-size:22px;
+z-index:5;
 }
 
+/* ================= CONTROLS FIX ================= */
 #controls{
 position:absolute;
-bottom:20px;
+bottom:15px;
+left:0;
 width:100%;
 display:flex;
 justify-content:space-between;
-padding:0 30px;
+align-items:center;
+padding:0 15px;
+box-sizing:border-box;
+z-index:50;
 }
 
 .btn{
-width:80px;
-height:80px;
+width:75px;
+height:75px;
 border-radius:50%;
 border:none;
-font-size:35px;
+font-size:32px;
 background:rgba(255,255,255,0.3);
 color:white;
+touch-action:none;
+display:flex;
+justify-content:center;
+align-items:center;
 }
 
+/* GAME OVER */
 #over{
 display:none;
 position:absolute;
@@ -215,16 +170,18 @@ left:50%;
 transform:translate(-50%,-50%);
 color:white;
 text-align:center;
+z-index:100;
 }
 </style>
 </head>
 
 <body>
 
-<!-- CALC -->
+<!-- ================= CALC ================= -->
 <div id="calc">
 <div id="box">
-<input id="ekran">
+
+<input id="ekran" placeholder="Hesap">
 
 <div class="grid">
 
@@ -244,17 +201,21 @@ text-align:center;
 <button onclick="add('+')">+</button>
 
 <button onclick="add('0')">0</button>
-<button onclick="run()">ENTER</button>
+<button onclick="run()">OK</button>
 <button onclick="clearE()" style="grid-column:span 2;background:red;">C</button>
 
 </div>
+
+<button id="startBtn" onclick="startGame()">START</button>
+
 </div>
 </div>
 
-<!-- GAME -->
+<!-- ================= GAME ================= -->
 <div id="game">
 
 <div id="road"></div>
+
 <div id="score">0</div>
 <div id="car"></div>
 
@@ -272,7 +233,7 @@ text-align:center;
 
 <script>
 
-/* CALC */
+/* ================= CALC ================= */
 function add(v){
 document.getElementById("ekran").value+=v;
 }
@@ -281,12 +242,12 @@ function clearE(){
 document.getElementById("ekran").value="";
 }
 
-/* IMPORTANT FIX */
+/* 2727 SYSTEM */
 function run(){
 let v=document.getElementById("ekran").value;
 
 if(v==="2727"){
-startGame();
+document.getElementById("startBtn").style.display="block";
 return;
 }
 
@@ -297,19 +258,18 @@ document.getElementById("ekran").value="ERROR";
 }
 }
 
-/* SWITCH FIX (CRITICAL) */
+/* START GAME */
 let calc=document.getElementById("calc");
 let game=document.getElementById("game");
+let car=document.getElementById("car");
+let over=document.getElementById("over");
 
 function startGame(){
 calc.style.display="none";
 game.style.display="block";
 }
 
-/* GAME */
-let car=document.getElementById("car");
-let over=document.getElementById("over");
-
+/* ================= GAME LOGIC ================= */
 let x=window.innerWidth/2;
 let left=false,right=false;
 let dead=false;
@@ -323,7 +283,7 @@ document.getElementById("score").innerText=score;
 }
 },100);
 
-/* ENEMY */
+/* ENEMIES */
 function spawn(){
 let e=document.createElement("div");
 e.className="enemy";
@@ -355,7 +315,7 @@ clearInterval(m);
 
 setInterval(spawn,800);
 
-/* CONTROLS */
+/* CONTROLS FIX (NO OUTSIDE) */
 function hold(btn,dir){
 btn.addEventListener("touchstart",(e)=>{
 e.preventDefault();
@@ -373,7 +333,7 @@ else right=false;
 hold(document.getElementById("left"),"l");
 hold(document.getElementById("right"),"r");
 
-/* MOVE */
+/* MOVE LOOP */
 function loop(){
 if(game.style.display==="block"){
 if(left)x-=7;
@@ -394,23 +354,10 @@ loop();
 </html>
 """
 
-@app.route("/", methods=["GET","POST"])
-def login():
-    error=""
-    if request.method=="POST":
-        user=request.form.get("user")
+@app.route("/")
+def home():
+    return render_template_string(html)
 
-        if user=="Musti":
-            return redirect(url_for("game"))
-        else:
-            error="Hatalı kullanıcı adı"
-
-    return render_template_string(login_html,error=error)
-
-@app.route("/game")
-def game():
-    return render_template_string(game_html)
-
-if __name__=="__main__":
-    port=int(os.environ.get("PORT",10000))
-    app.run(host="0.0.0.0",port=port)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
