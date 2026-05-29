@@ -1,242 +1,65 @@
-from flask import Flask, render_template_string
+# requirements.txt
+# flask
+# flask-socketio
+# eventlet
+
+from flask import Flask, render_template_string, request
+from flask_socketio import SocketIO, emit
 import os
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-HTML = """
+# ONLINE PLAYERS
+players = {}
+counter = 1
+
+html = """
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Neon Car Game</title>
+<title>Neon Multiplayer</title>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <style>
 
-html,body{
+body{
 margin:0;
-padding:0;
-width:100%;
-height:100%;
-overflow:hidden;
 background:#071014;
 font-family:Arial;
-touch-action:none;
-user-select:none;
-}
-
-/* GAME */
-
-#game{
-position:fixed;
-inset:0;
 overflow:hidden;
+color:white;
 }
 
-/* GRASS */
-
-#grassLeft{
-position:absolute;
-left:0;
-top:0;
-width:calc(50% - 85px);
-height:100%;
-background:#14532d;
-}
-
-#grassRight{
-position:absolute;
-right:0;
-top:0;
-width:calc(50% - 85px);
-height:100%;
-background:#14532d;
-}
-
-/* ROAD */
-
-#road{
-position:absolute;
-left:50%;
-transform:translateX(-50%);
-width:170px;
-height:100%;
-background:#1a1a1a;
-border-left:2px solid #00d5ff;
-border-right:2px solid #00d5ff;
-overflow:hidden;
-}
-
-/* ROAD LINE */
-
-.lane{
-position:absolute;
-left:50%;
-transform:translateX(-50%);
-width:5px;
-height:70px;
-background:#00d5ff;
-opacity:.5;
-animation:moveLine .5s linear infinite;
-}
-
-@keyframes moveLine{
-0%{transform:translate(-50%,-120px);}
-100%{transform:translate(-50%,120vh);}
-}
-
-/* PLAYER */
-
-#car{
-position:absolute;
-bottom:120px;
-width:45px;
-height:80px;
-background:#ff00aa;
-border-radius:10px;
-box-shadow:0 0 10px #ff00aa;
-}
-
-/* ENEMY */
-
-.enemy{
-position:absolute;
-width:45px;
-height:80px;
-background:#00aaff;
-border-radius:10px;
-box-shadow:0 0 10px #00aaff;
-}
-
-/* OBSTACLE */
-
-.obstacle{
-position:absolute;
-width:45px;
-height:45px;
-background:red;
-border-radius:8px;
-}
-
-/* COIN */
-
-.coin{
-position:absolute;
-width:20px;
-height:20px;
-border-radius:50%;
-background:gold;
-box-shadow:0 0 10px gold;
-}
-
-/* EXPLOSION */
-
-.explosion{
-position:absolute;
-width:80px;
-height:80px;
-border-radius:50%;
-background:radial-gradient(circle,orange,red,transparent);
-animation:boom .4s linear forwards;
-pointer-events:none;
-z-index:999;
-}
-
-@keyframes boom{
-
-0%{
-transform:scale(.3);
-opacity:1;
-}
-
-100%{
-transform:scale(2.5);
-opacity:0;
-}
-
-}
-
-/* UI */
-
-#healthBar{
+#nameBox{
 position:absolute;
 top:10px;
 left:10px;
-color:#ff4444;
-font-size:20px;
-z-index:50;
+font-size:22px;
+z-index:20;
 }
 
-#coinBar{
+#menu{
 position:absolute;
-top:40px;
-left:10px;
-color:gold;
-font-size:20px;
-z-index:50;
-}
-
-#botHealthBar{
-position:absolute;
-top:70px;
-left:10px;
-color:#00aaff;
-font-size:20px;
-z-index:50;
-display:none;
-}
-
-/* CONTROLS */
-
-#controls{
-position:absolute;
-bottom:15px;
-left:0;
-width:100%;
-display:flex;
-justify-content:space-between;
-padding:0 20px;
-box-sizing:border-box;
-z-index:50;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#111827;
+padding:20px;
+border-radius:20px;
+width:300px;
+text-align:center;
+z-index:20;
 }
 
 .btn{
-width:95px;
-height:95px;
-border:none;
-border-radius:50%;
-background:rgba(255,255,255,0.12);
-color:white;
-font-size:40px;
-touch-action:none;
-}
-
-/* GAME OVER */
-
-#over{
-display:none;
-position:absolute;
-inset:0;
-background:rgba(0,0,0,.7);
-justify-content:center;
-align-items:center;
-z-index:100;
-}
-
-.panel{
-background:#111827;
-padding:25px;
-border-radius:20px;
-width:80%;
-max-width:320px;
-text-align:center;
-color:white;
-}
-
-.panel button{
 width:100%;
-padding:14px;
+padding:15px;
 margin-top:10px;
 border:none;
 border-radius:12px;
@@ -245,531 +68,377 @@ color:white;
 font-size:18px;
 }
 
+#playersPanel{
+display:none;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#111827;
+padding:20px;
+border-radius:20px;
+width:300px;
+z-index:30;
+}
+
+.playerRow{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-top:10px;
+background:#1f2937;
+padding:10px;
+border-radius:10px;
+}
+
+#inviteBox{
+display:none;
+position:absolute;
+top:20px;
+left:50%;
+transform:translateX(-50%);
+background:#1f2937;
+padding:20px;
+border-radius:15px;
+z-index:50;
+text-align:center;
+}
+
+#countdown{
+display:none;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:120px;
+font-weight:bold;
+z-index:100;
+}
+
 </style>
 </head>
 
 <body>
 
-<div id="game">
-
-<div id="grassLeft"></div>
-<div id="grassRight"></div>
-
-<div id="road"></div>
-
-<div id="healthBar">CAN: 3</div>
-<div id="coinBar">COIN: 0</div>
-<div id="botHealthBar">BOT CAN: 4</div>
-
-<div id="car"></div>
-
-<div id="controls">
-
-<button class="btn" id="left">◀</button>
-<button class="btn" id="right">▶</button>
-
+<div id="nameBox">
+YÜKLENİYOR...
 </div>
 
-<div id="over">
+<div id="menu">
 
-<div class="panel">
+<h1>NEON RACE</h1>
 
-<h1 id="winnerText">GAME OVER</h1>
-
-<button onclick="restart()">
+<button class="btn">
 TEKRAR OYNA
 </button>
 
-<button onclick="start1v1()">
+<button class="btn">
 1V1
 </button>
 
-<button onclick="normalMode()">
-NORMAL OYUN
+<button class="btn" onclick="openPlayers()">
+MULTIPLAYER
 </button>
 
 </div>
 
+<div id="playersPanel">
+
+<h2>AKTİF OYUNCULAR</h2>
+
+<div id="playersList"></div>
+
 </div>
 
+<div id="inviteBox">
+
+<h2 id="inviteText"></h2>
+
+<button class="btn" onclick="acceptInvite()">
+KABUL ET
+</button>
+
+<button class="btn" onclick="rejectInvite()">
+REDDET
+</button>
+
+</div>
+
+<div id="countdown">
+5
 </div>
 
 <script>
 
-/* ROAD LINES */
+const socket = io();
 
-for(let i=0;i<10;i++){
+let myName = "";
+let inviteFrom = null;
 
-let line=document.createElement("div");
+/* JOIN */
 
-line.className="lane";
+socket.on("welcome",(data)=>{
 
-line.style.top=(i*120)+"px";
+myName = data.name;
 
-document.getElementById("road").appendChild(line);
+document.getElementById("nameBox").innerText =
+myName;
 
-}
+});
 
-/* VARIABLES */
+/* PLAYERS */
 
-let car=document.getElementById("car");
+socket.on("players",(list)=>{
 
-let x=window.innerWidth/2;
+let box = document.getElementById("playersList");
 
-car.style.left=x+"px";
+box.innerHTML = "";
 
-let left=false;
-let right=false;
+let count = 0;
 
-let dead=false;
+for(let id in list){
 
-let health=3;
-let botHealth=4;
+if(list[id].name !== myName){
 
-let coins=0;
+count++;
 
-let mode1v1=false;
+box.innerHTML += `
+<div class="playerRow">
 
-let bot=null;
+<span>${list[id].name}</span>
 
-/* CONTROLS */
+<button onclick="invitePlayer('${id}')">
+DAVET ET
+</button>
 
-const leftBtn=document.getElementById("left");
-const rightBtn=document.getElementById("right");
-
-leftBtn.addEventListener("touchstart",(e)=>{
-e.preventDefault();
-left=true;
-},{passive:false});
-
-leftBtn.addEventListener("touchend",(e)=>{
-e.preventDefault();
-left=false;
-},{passive:false});
-
-rightBtn.addEventListener("touchstart",(e)=>{
-e.preventDefault();
-right=true;
-},{passive:false});
-
-rightBtn.addEventListener("touchend",(e)=>{
-e.preventDefault();
-right=false;
-},{passive:false});
-
-/* MOVE */
-
-function loop(){
-
-if(!dead){
-
-if(left) x-=7;
-if(right) x+=7;
-
-if(x<20) x=20;
-if(x>window.innerWidth-70) x=window.innerWidth-70;
-
-car.style.left=x+"px";
-
-}
-
-requestAnimationFrame(loop);
-
-}
-
-loop();
-
-/* EXPLOSION */
-
-function explode(px,py){
-
-let ex=document.createElement("div");
-
-ex.className="explosion";
-
-ex.style.left=(px-40)+"px";
-ex.style.top=(py-40)+"px";
-
-document.body.appendChild(ex);
-
-setTimeout(()=>{
-ex.remove();
-},400);
-
-}
-
-/* GAME OVER */
-
-function gameOver(text){
-
-dead=true;
-
-document.getElementById("winnerText").innerText=text;
-
-document.getElementById("over").style.display="flex";
-
-}
-
-/* RESTART */
-
-function restart(){
-
-location.reload();
-
-}
-
-/* NORMAL MODE */
-
-function normalMode(){
-
-mode1v1=false;
-
-dead=false;
-
-health=3;
-
-document.getElementById("healthBar").innerText="CAN: 3";
-
-document.getElementById("botHealthBar").style.display="none";
-
-document.getElementById("over").style.display="none";
-
-if(bot){
-bot.remove();
-bot=null;
-}
-
-}
-
-/* ENEMY */
-
-function spawnEnemy(){
-
-if(mode1v1) return;
-
-let e=document.createElement("div");
-
-e.className="enemy";
-
-e.style.left=Math.random()*(window.innerWidth-60)+"px";
-
-document.body.appendChild(e);
-
-let y=-100;
-
-let move=setInterval(()=>{
-
-if(dead){
-
-e.remove();
-clearInterval(move);
-return;
-
-}
-
-y+=6;
-
-e.style.top=y+"px";
-
-let a=car.getBoundingClientRect();
-let b=e.getBoundingClientRect();
-
-if(!(a.right<b.left ||
-a.left>b.right ||
-a.bottom<b.top ||
-a.top>b.bottom)){
-
-health--;
-
-document.getElementById("healthBar").innerText=
-"CAN: "+health;
-
-explode(
-a.left+a.width/2,
-a.top+a.height/2
-);
-
-e.remove();
-
-clearInterval(move);
-
-if(health<=0){
-
-gameOver("GAME OVER");
+</div>
+`;
 
 }
 
 }
 
-if(y>window.innerHeight){
+if(count===0){
 
-e.remove();
-clearInterval(move);
-
-}
-
-},20);
+box.innerHTML = "<h3>NO FRIEND</h3>";
 
 }
 
-setInterval(spawnEnemy,1000);
+});
 
-/* COIN */
+/* OPEN PANEL */
 
-function spawnCoin(){
+function openPlayers(){
 
-let c=document.createElement("div");
-
-c.className="coin";
-
-c.style.left=
-Math.random()*(window.innerWidth-40)+"px";
-
-document.body.appendChild(c);
-
-let y=-20;
-
-let move=setInterval(()=>{
-
-if(dead){
-
-c.remove();
-clearInterval(move);
-return;
-
-}
-
-y+=5;
-
-c.style.top=y+"px";
-
-let a=car.getBoundingClientRect();
-let b=c.getBoundingClientRect();
-
-if(!(a.right<b.left ||
-a.left>b.right ||
-a.bottom<b.top ||
-a.top>b.bottom)){
-
-coins++;
-
-document.getElementById("coinBar").innerText=
-"COIN: "+coins;
-
-c.remove();
-
-clearInterval(move);
-
-}
-
-if(y>window.innerHeight){
-
-c.remove();
-clearInterval(move);
-
-}
-
-},20);
-
-}
-
-setInterval(spawnCoin,1200);
-
-/* 1V1 */
-
-function start1v1(){
-
-mode1v1=true;
-
-dead=false;
-
-health=3;
-botHealth=4;
-
-document.getElementById("healthBar").innerText=
-"CAN: 3";
-
-document.getElementById("botHealthBar").style.display=
+document.getElementById("playersPanel").style.display =
 "block";
 
-document.getElementById("botHealthBar").innerText=
-"BOT CAN: 4";
-
-document.getElementById("over").style.display="none";
-
-/* BOT */
-
-bot=document.createElement("div");
-
-bot.className="enemy";
-
-bot.style.left=(window.innerWidth/2)+15+"px";
-
-bot.style.top=(window.innerHeight-220)+"px";
-
-document.body.appendChild(bot);
-
-/* PLAYER */
-
-x=(window.innerWidth/2)-60;
-
-car.style.left=x+"px";
-
-let botY=window.innerHeight-220;
-
-let botX=(window.innerWidth/2)+15;
-
-let botMove=setInterval(()=>{
-
-if(dead || !mode1v1){
-
-clearInterval(botMove);
-return;
+socket.emit("get_players");
 
 }
 
-botY-=3.5;
+/* INVITE */
 
-botX += (Math.random()-0.5)*6;
+function invitePlayer(id){
 
-if(botX<(window.innerWidth/2)+5)
-botX=(window.innerWidth/2)+5;
-
-if(botX>(window.innerWidth/2)+45)
-botX=(window.innerWidth/2)+45;
-
-if(bot){
-
-bot.style.left=botX+"px";
-bot.style.top=botY+"px";
+socket.emit("invite",{
+target:id
+});
 
 }
 
-},40);
+/* RECEIVE INVITE */
+
+socket.on("invite_received",(data)=>{
+
+inviteFrom = data.id;
+
+document.getElementById("inviteBox").style.display =
+"block";
+
+document.getElementById("inviteText").innerText =
+data.name + " seni VS çağırıyor";
+
+});
+
+/* ACCEPT */
+
+function acceptInvite(){
+
+socket.emit("accept_invite",{
+target:inviteFrom
+});
+
+document.getElementById("inviteBox").style.display =
+"none";
 
 }
 
-/* OBSTACLE */
+/* REJECT */
 
-function spawnObstacle(){
+function rejectInvite(){
 
-if(!mode1v1) return;
+socket.emit("reject_invite",{
+target:inviteFrom
+});
 
-let o=document.createElement("div");
-
-o.className="obstacle";
-
-o.style.left=
-Math.random()*(window.innerWidth-50)+"px";
-
-document.body.appendChild(o);
-
-let y=-40;
-
-let move=setInterval(()=>{
-
-if(dead){
-
-o.remove();
-clearInterval(move);
-return;
+document.getElementById("inviteBox").style.display =
+"none";
 
 }
 
-y+=7;
+/* REJECTED */
 
-o.style.top=y+"px";
+socket.on("invite_rejected",(data)=>{
 
-let a=car.getBoundingClientRect();
-let b=o.getBoundingClientRect();
+alert(data.name + " reddetti");
 
-/* PLAYER HIT */
+});
 
-if(!(a.right<b.left ||
-a.left>b.right ||
-a.bottom<b.top ||
-a.top>b.bottom)){
+/* START MATCH */
 
-health--;
+socket.on("start_match",()=>{
 
-document.getElementById("healthBar").innerText=
-"CAN: "+health;
+startCountdown();
 
-explode(
-a.left+a.width/2,
-a.top+a.height/2
-);
+});
 
-o.remove();
+/* COUNTDOWN */
 
-clearInterval(move);
+function startCountdown(){
 
-if(health<=0){
+let cd = document.getElementById("countdown");
 
-gameOver("BOT KAZANDI");
+cd.style.display = "block";
 
-}
+let n = 5;
 
-}
+cd.innerText = n;
 
-/* BOT HIT */
+let timer = setInterval(()=>{
 
-if(bot){
+n--;
 
-let bb=bot.getBoundingClientRect();
+cd.innerText = n;
 
-if(!(bb.right<b.left ||
-bb.left>b.right ||
-bb.bottom<b.top ||
-bb.top>b.bottom)){
+if(n<=0){
 
-botHealth--;
+clearInterval(timer);
 
-document.getElementById("botHealthBar").innerText=
-"BOT CAN: "+botHealth;
+cd.innerText = "GO!";
 
-explode(
-bb.left+bb.width/2,
-bb.top+bb.height/2
-);
+setTimeout(()=>{
 
-o.remove();
+cd.style.display="none";
 
-clearInterval(move);
+startGame();
 
-if(botHealth<=0){
-
-gameOver("SEN KAZANDIN");
+},1000);
 
 }
 
-}
+},1000);
 
 }
 
-if(y>window.innerHeight){
+/* GAME */
 
-o.remove();
-clearInterval(move);
+function startGame(){
 
-}
-
-},20);
+alert("15 CANLIK MULTIPLAYER BAŞLADI");
 
 }
-
-setInterval(spawnObstacle,500);
 
 </script>
 
 </body>
 </html>
+
 """
 
 @app.route("/")
 def home():
-    return render_template_string(HTML)
+    return render_template_string(html)
+
+@socketio.on("connect")
+def connect():
+
+    global counter
+
+    name = f"Nome {counter}"
+
+    players[request.sid] = {
+        "name": name
+    }
+
+    counter += 1
+
+    emit("welcome",{
+        "name": name
+    })
+
+    socketio.emit("players", players)
+
+@socketio.on("disconnect")
+def disconnect():
+
+    if request.sid in players:
+        del players[request.sid]
+
+    socketio.emit("players", players)
+
+@socketio.on("get_players")
+def get_players():
+
+    emit("players", players)
+
+@socketio.on("invite")
+def invite(data):
+
+    target = data["target"]
+
+    if target in players:
+
+        socketio.emit(
+            "invite_received",
+            {
+                "id": request.sid,
+                "name": players[request.sid]["name"]
+            },
+            room=target
+        )
+
+@socketio.on("accept_invite")
+def accept_invite(data):
+
+    target = data["target"]
+
+    socketio.emit(
+        "start_match",
+        room=target
+    )
+
+    emit("start_match")
+
+@socketio.on("reject_invite")
+def reject_invite(data):
+
+    target = data["target"]
+
+    socketio.emit(
+        "invite_rejected",
+        {
+            "name": players[request.sid]["name"]
+        },
+        room=target
+    )
 
 if __name__ == "__main__":
+
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=port
+    )
