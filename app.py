@@ -9,7 +9,7 @@ html = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Car Game</title>
+<title>Night Car Game</title>
 
 <style>
 html,body{
@@ -19,13 +19,13 @@ width:100%;
 height:100%;
 overflow:hidden;
 font-family:Arial;
-background:#111;
 position:fixed;
 touch-action:none;
 user-select:none;
+background:#000;
 }
 
-/* ================= LOGIN ================= */
+/* LOGIN */
 #login{
 position:fixed;
 inset:0;
@@ -36,7 +36,7 @@ background:#0b1a2b;
 z-index:100;
 }
 
-.loginBox{
+.box{
 width:90%;
 max-width:360px;
 background:#13233d;
@@ -46,7 +46,7 @@ color:white;
 text-align:center;
 }
 
-/* ================= CALC ================= */
+/* CALC */
 #calc{
 position:fixed;
 inset:0;
@@ -57,8 +57,8 @@ background:#111;
 z-index:10;
 }
 
-#box{
-width:92%;
+#panel{
+width:90%;
 max-width:380px;
 background:#222;
 padding:20px;
@@ -71,7 +71,6 @@ padding:15px;
 font-size:22px;
 text-align:right;
 border:none;
-outline:none;
 }
 
 .grid{
@@ -86,38 +85,42 @@ padding:15px;
 border:none;
 background:#444;
 color:white;
-border-radius:8px;
 }
 
-#startBtn{
-display:none;
-margin-top:10px;
-width:100%;
-padding:15px;
-background:#0d6efd;
-color:white;
-border:none;
-border-radius:10px;
-font-size:18px;
-}
-
-/* ================= GAME ================= */
+/* GAME */
 #game{
 display:none;
 position:fixed;
 inset:0;
-background:#2b2b2b;
+background:#05070d;
 }
 
-/* ROAD */
 #road{
 position:absolute;
 left:50%;
 transform:translateX(-50%);
-width:120px;
+width:160px;
 height:100%;
-background:linear-gradient(#3a3a3a,#1a1a1a);
+background:linear-gradient(#1a1a1a,#000);
 box-shadow:inset 0 0 20px black;
+overflow:hidden;
+}
+
+/* LANE */
+.lane{
+position:absolute;
+left:50%;
+transform:translateX(-50%);
+width:4px;
+height:70px;
+background:white;
+opacity:0.6;
+animation:move 0.5s linear infinite;
+}
+
+@keyframes move{
+0%{transform:translate(-50%,-120px);}
+100%{transform:translate(-50%,120vh);}
 }
 
 /* CAR */
@@ -127,53 +130,37 @@ bottom:120px;
 left:50%;
 width:45px;
 height:80px;
-background:linear-gradient(#ff2d2d,#990000);
+background:linear-gradient(red,darkred);
 border-radius:10px;
-border:2px solid #330000;
 }
 
-/* CAR DETAILS */
 #car::before{
 content:"";
 position:absolute;
-top:8px;
-left:10px;
-width:25px;
-height:20px;
-background:#87cefa;
-border-radius:5px;
+top:-40px;
+left:-10px;
+width:70px;
+height:120px;
+background:radial-gradient(rgba(255,255,180,0.4),transparent);
 }
 
-#car::after{
-content:"";
-position:absolute;
-bottom:6px;
-left:6px;
-width:6px;
-height:6px;
-background:yellow;
-border-radius:50%;
-box-shadow:20px 0 yellow;
-}
-
-/* ENEMY */
+/* ENEMY CAR */
 .enemy{
 position:absolute;
-width:40px;
-height:70px;
-background:yellow;
+width:45px;
+height:80px;
+background:gold;
 border-radius:8px;
-top:-120px;
 }
 
 /* COIN */
 .coin{
 position:absolute;
-width:22px;
-height:22px;
-border-radius:50%;
+width:20px;
+height:20px;
 background:gold;
-top:-50px;
+border-radius:50%;
+top:-40px;
 }
 
 /* SCORE */
@@ -182,8 +169,20 @@ position:absolute;
 top:10px;
 left:10px;
 color:white;
-font-size:16px;
-z-index:5;
+font-size:14px;
+}
+
+/* LEADERBOARD */
+#board{
+position:absolute;
+top:10px;
+right:10px;
+width:160px;
+background:rgba(0,0,0,0.4);
+color:white;
+font-size:11px;
+padding:8px;
+border-radius:10px;
 }
 
 /* CONTROLS */
@@ -195,18 +194,16 @@ width:100%;
 display:flex;
 justify-content:space-between;
 padding:0 30px;
-box-sizing:border-box;
 }
 
 .btn{
 width:70px;
 height:70px;
 border-radius:50%;
+background:rgba(255,255,255,0.2);
 border:none;
-font-size:32px;
-background:rgba(255,255,255,0.3);
 color:white;
-touch-action:none;
+font-size:30px;
 }
 
 /* GAME OVER */
@@ -219,33 +216,15 @@ justify-content:center;
 align-items:center;
 }
 
-.panel{
-background:linear-gradient(#1e1e1e,#2c2c2c);
-padding:25px;
+.card{
+background:#1e1e1e;
+padding:20px;
 border-radius:15px;
+color:white;
 text-align:center;
-color:white;
 width:80%;
-max-width:300px;
-box-shadow:0 0 20px black;
 }
 
-.panel h1{
-color:#ff4d4d;
-}
-
-.panel p{
-margin:8px 0;
-}
-
-.panel button{
-width:100%;
-padding:12px;
-border:none;
-border-radius:10px;
-background:#0d6efd;
-color:white;
-}
 </style>
 </head>
 
@@ -253,21 +232,20 @@ color:white;
 
 <!-- LOGIN -->
 <div id="login">
-<div class="loginBox">
+<div class="box">
 <h2>Giriş</h2>
-<input id="user" placeholder="Kullanıcı adı" style="width:100%;padding:12px;border:none;border-radius:10px;">
-<button onclick="login()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:#0d6efd;color:white;">Giriş</button>
+<input id="user" placeholder="Musti yaz">
+<button onclick="login()" style="width:100%;margin-top:10px;padding:10px;background:#0d6efd;color:white;">Giriş</button>
 </div>
 </div>
 
 <!-- CALC -->
 <div id="calc">
-<div id="box">
+<div id="panel">
 
 <input id="ekran">
 
 <div class="grid">
-
 <button onclick="add('7')">7</button>
 <button onclick="add('8')">8</button>
 <button onclick="add('9')">9</button>
@@ -286,10 +264,7 @@ color:white;
 <button onclick="add('0')">0</button>
 <button onclick="check()">OK</button>
 <button onclick="clearE()" style="grid-column:span 2;background:red;">C</button>
-
 </div>
-
-<button id="startBtn" onclick="startGame()">START</button>
 
 </div>
 </div>
@@ -299,7 +274,10 @@ color:white;
 
 <div id="road"></div>
 
-<div id="score">Skor</div>
+<div id="score"></div>
+
+<div id="board"></div>
+
 <div id="car"></div>
 
 <div id="controls">
@@ -308,15 +286,12 @@ color:white;
 </div>
 
 <div id="over">
-<div class="panel">
-<h1>GAME OVER</h1>
-
-<p>YAPILAN SKOR: <span id="fs"></span></p>
-<p>KAZANILAN PARA: <span id="fc"></span></p>
-<p>YÜKSEK SKOR: <span id="fh"></span></p>
-
-<button onclick="restart()">TEKRAR OYNA</button>
-
+<div class="card">
+<h2>GAME OVER</h2>
+<p id="fs"></p>
+<p id="fc"></p>
+<p id="fh"></p>
+<button onclick="restart()">Tekrar</button>
 </div>
 </div>
 
@@ -326,124 +301,65 @@ color:white;
 
 /* LOGIN */
 function login(){
-let u=document.getElementById("user").value;
-if(u!=="Musti"){
-alert("Hatalı kullanıcı");
-return;
-}
+if(document.getElementById("user").value==="Musti"){
 document.getElementById("login").style.display="none";
 document.getElementById("calc").style.display="flex";
+}else alert("Hatalı");
 }
 
 /* CALC */
-function add(v){
-document.getElementById("ekran").value+=v;
-}
+function add(v){ekran.value+=v;}
+function clearE(){ekran.value="";}
 
-function clearE(){
-document.getElementById("ekran").value="";
-}
+let startBtn=false;
 
-/* START CODE */
 function check(){
-let v=document.getElementById("ekran").value;
-if(v==="2727"){
-document.getElementById("startBtn").style.display="block";
-return;
-}
-try{
-document.getElementById("ekran").value=eval(v);
-}catch{
-document.getElementById("ekran").value="ERROR";
-}
+let v=ekran.value;
+if(v==="2727") startBtn=true;
 }
 
 /* GAME */
 let calc=document.getElementById("calc");
 let game=document.getElementById("game");
 let car=document.getElementById("car");
-let over=document.getElementById("over");
 
-function startGame(){
-calc.style.display="none";
-game.style.display="block";
-}
-
-/* STATE */
 let x=window.innerWidth/2;
 let left=false,right=false;
+
+let score=0,coins=0,speed=6;
 let dead=false;
 
-let score=0;
-let coins=0;
-let speed=6;
-let highScore=localStorage.getItem("hs")||0;
+let hs=localStorage.getItem("hs")||0;
 
-/* UI */
-function update(){
-document.getElementById("score").innerText=
-"Skor:"+score+" Coin:"+coins+" HS:"+highScore;
+/* START GAME */
+function start(){
+calc.style.display="none";
+game.style.display="block";
+createLanes();
+board();
 }
 
-/* RESTART */
-function restart(){
-dead=false;
-score=0;
-coins=0;
-speed=6;
-over.style.display="none";
-x=window.innerWidth/2;
-car.style.left=x+"px";
+/* LANES */
+function createLanes(){
+for(let i=0;i<12;i++){
+let l=document.createElement("div");
+l.className="lane";
+l.style.top=(i*120)+"px";
+document.getElementById("game").appendChild(l);
+}
 }
 
-/* SCORE + SPEED */
+/* SCORE */
 setInterval(()=>{
 if(game.style.display==="block" && !dead){
 score++;
 if(score%50===0)speed++;
-update();
+document.getElementById("score").innerText="Score:"+score+" Coin:"+coins+" HS:"+hs;
 }
 },100);
 
-/* COIN */
-function spawnCoin(){
-if(game.style.display!=="block")return;
-
-let c=document.createElement("div");
-c.className="coin";
-c.style.left=Math.random()*(window.innerWidth-50)+"px";
-document.body.appendChild(c);
-
-let y=-50;
-
-let m=setInterval(()=>{
-
-if(dead){c.remove();clearInterval(m);return;}
-
-y+=5;
-c.style.top=y+"px";
-
-let a=car.getBoundingClientRect();
-let b=c.getBoundingClientRect();
-
-if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
-coins++;
-c.remove();
-clearInterval(m);
-update();
-}
-
-if(y>window.innerHeight){
-c.remove();
-clearInterval(m);
-}
-
-},20);
-}
-setInterval(spawnCoin,1200);
-
 /* ENEMY */
-function spawn(){
+function enemy(){
 if(game.style.display!=="block")return;
 
 let e=document.createElement("div");
@@ -451,10 +367,9 @@ e.className="enemy";
 e.style.left=Math.random()*(window.innerWidth-60)+"px";
 document.body.appendChild(e);
 
-let y=-120;
+let y=-100;
 
 let m=setInterval(()=>{
-
 if(dead){e.remove();clearInterval(m);return;}
 
 y+=speed;
@@ -466,16 +381,16 @@ let b=e.getBoundingClientRect();
 if(!(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)){
 dead=true;
 
-if(score>highScore){
-highScore=score;
-localStorage.setItem("hs",highScore);
+document.getElementById("fs").innerText="Skor:"+score;
+document.getElementById("fc").innerText="Coin:"+coins;
+
+if(score>hs){
+hs=score;
+localStorage.setItem("hs",hs);
 }
+document.getElementById("fh").innerText="HS:"+hs;
 
-document.getElementById("fs").innerText=score;
-document.getElementById("fc").innerText=coins;
-document.getElementById("fh").innerText=highScore;
-
-over.style.display="flex";
+document.getElementById("over").style.display="flex";
 }
 
 if(y>window.innerHeight){
@@ -485,39 +400,40 @@ clearInterval(m);
 
 },20);
 }
-setInterval(spawn,800);
-
-/* CONTROLS */
-function bind(btn,dir){
-btn.addEventListener("touchstart",(e)=>{
-e.preventDefault();
-if(dir==="l")left=true;
-else right=true;
-});
-btn.addEventListener("touchend",(e)=>{
-e.preventDefault();
-if(dir==="l")left=false;
-else right=false;
-});
-}
-
-bind(document.getElementById("left"),"l");
-bind(document.getElementById("right"),"r");
+setInterval(enemy,800);
 
 /* MOVE */
+function bind(btn,d){
+btn.addEventListener("touchstart",()=>d==="l"?left=true:right=true);
+btn.addEventListener("touchend",()=>d==="l"?left=false:right=false);
+}
+
+bind(leftBtn=document.getElementById("left"),"l");
+bind(rightBtn=document.getElementById("right"),"r");
+
 function loop(){
 if(game.style.display==="block"){
 if(left)x-=7;
 if(right)x+=7;
-
-if(x<20)x=20;
-if(x>window.innerWidth-70)x=window.innerWidth-70;
 
 car.style.left=x+"px";
 }
 requestAnimationFrame(loop);
 }
 loop();
+
+/* RESTART */
+function restart(){
+location.reload();
+}
+
+/* AUTO START */
+setInterval(()=>{
+if(startBtn){
+startBtn=false;
+start();
+}
+},500);
 
 </script>
 
