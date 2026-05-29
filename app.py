@@ -1,9 +1,74 @@
-from flask import Flask, render_template_string
+from flask import Flask, request, render_template_string, redirect, url_for
 import os
 
 app = Flask(__name__)
 
-html = """
+# ================= LOGIN =================
+login_html = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<style>
+body{
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:#0b1a2b;
+font-family:Arial;
+}
+
+.box{
+width:90%;
+max-width:360px;
+background:#13233d;
+padding:25px;
+border-radius:20px;
+color:white;
+text-align:center;
+}
+
+input,button{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:10px;
+}
+
+button{
+background:#0d6efd;
+color:white;
+font-size:18px;
+}
+
+.error{color:red;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<div class="box">
+<h2>Giriş Sistemi</h2>
+
+<form method="POST">
+<input name="user" placeholder="Kullanıcı adı">
+<button>Giriş</button>
+</form>
+
+<p class="error">{{error}}</p>
+
+</div>
+
+</body>
+</html>
+"""
+
+# ================= GAME =================
+game_html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -20,12 +85,12 @@ height:100%;
 overflow:hidden;
 font-family:Arial;
 background:#222;
-position:fixed;
 touch-action:none;
 user-select:none;
+position:fixed;
 }
 
-/* ================= FULL CALC ================= */
+/* ================= CALC ================= */
 #calc{
 position:fixed;
 inset:0;
@@ -38,7 +103,7 @@ z-index:10;
 
 #box{
 width:92%;
-max-width:380px;
+max-width:360px;
 background:#222;
 padding:20px;
 border-radius:15px;
@@ -66,7 +131,6 @@ border:none;
 background:#444;
 color:white;
 border-radius:8px;
-font-size:18px;
 }
 
 #startBtn{
@@ -75,10 +139,10 @@ margin-top:10px;
 width:100%;
 padding:15px;
 background:#0d6efd;
-border:none;
 color:white;
-font-size:18px;
+border:none;
 border-radius:10px;
+font-size:18px;
 }
 
 /* ================= GAME ================= */
@@ -89,7 +153,6 @@ inset:0;
 background:#555;
 }
 
-/* ROAD */
 #road{
 position:absolute;
 left:50%;
@@ -99,7 +162,6 @@ height:100%;
 background:#2b2b2b;
 }
 
-/* CAR */
 #car{
 position:absolute;
 bottom:120px;
@@ -110,7 +172,6 @@ background:red;
 border-radius:8px;
 }
 
-/* ENEMY */
 .enemy{
 position:absolute;
 width:50px;
@@ -119,7 +180,6 @@ background:yellow;
 top:-120px;
 }
 
-/* SCORE */
 #score{
 position:absolute;
 top:10px;
@@ -129,7 +189,7 @@ font-size:22px;
 z-index:5;
 }
 
-/* ================= CONTROLS (SOLA ÇEKİLDİ) ================= */
+/* CONTROLS */
 #controls{
 position:absolute;
 bottom:15px;
@@ -137,9 +197,8 @@ left:0;
 width:100%;
 display:flex;
 justify-content:space-between;
-padding:0 35px; /* 🔥 SOLA İÇERİ ÇEKİLDİ */
+padding:0 35px;
 box-sizing:border-box;
-z-index:50;
 }
 
 .btn{
@@ -153,7 +212,6 @@ color:white;
 touch-action:none;
 }
 
-/* GAME OVER */
 #over{
 display:none;
 position:absolute;
@@ -169,8 +227,23 @@ z-index:100;
 
 <body>
 
+<!-- ================= LOGIN ================= -->
+<div id="login" style="position:fixed;inset:0;display:flex;justify-content:center;align-items:center;background:#0b1a2b;z-index:20;">
+<div style="width:90%;max-width:360px;background:#13233d;padding:25px;border-radius:20px;text-align:center;color:white;">
+<h2>Giriş</h2>
+
+<form method="POST">
+<input name="user" style="width:100%;padding:12px;border:none;border-radius:10px;" placeholder="Kullanıcı adı">
+<button style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:#0d6efd;color:white;">Giriş</button>
+</form>
+
+<p style="color:red;">{{error}}</p>
+
+</div>
+</div>
+
 <!-- ================= CALC ================= -->
-<div id="calc">
+<div id="calc" style="display:none;">
 <div id="box">
 
 <input id="ekran">
@@ -184,7 +257,7 @@ z-index:100;
 
 <button onclick="add('4')">4</button>
 <button onclick="add('5')">5</button>
-<button onclick="add('6')">*</button>
+<button onclick="add('*')">*</button>
 <button onclick="add('-')">-</button>
 
 <button onclick="add('1')">1</button>
@@ -225,6 +298,20 @@ z-index:100;
 
 <script>
 
+/* LOGIN SWITCH (Musti) */
+document.querySelector("form").addEventListener("submit",function(e){
+let u=document.querySelector("input[name='user']").value;
+if(u!=="Musti"){
+e.preventDefault();
+alert("Hatalı kullanıcı adı!");
+}
+else{
+e.preventDefault();
+document.getElementById("login").style.display="none";
+document.getElementById("calc").style.display="flex";
+}
+});
+
 /* CALC */
 function add(v){
 document.getElementById("ekran").value+=v;
@@ -234,7 +321,7 @@ function clearE(){
 document.getElementById("ekran").value="";
 }
 
-/* 2727 SYSTEM */
+/* 2727 */
 function check(){
 let v=document.getElementById("ekran").value;
 
@@ -250,7 +337,7 @@ document.getElementById("ekran").value="ERROR";
 }
 }
 
-/* SWITCH */
+/* GAME START */
 let calc=document.getElementById("calc");
 let game=document.getElementById("game");
 let car=document.getElementById("car");
@@ -261,7 +348,7 @@ calc.style.display="none";
 game.style.display="block";
 }
 
-/* GAME STATE */
+/* STATE */
 let x=window.innerWidth/2;
 let left=false,right=false;
 let dead=false;
@@ -284,7 +371,7 @@ document.getElementById("score").innerText=score;
 }
 },100);
 
-/* ENEMIES */
+/* ENEMY */
 function spawn(){
 if(game.style.display!=="block") return;
 
@@ -297,11 +384,7 @@ let y=-120;
 
 let m=setInterval(()=>{
 
-if(dead){
-e.remove();
-clearInterval(m);
-return;
-}
+if(dead){e.remove();clearInterval(m);return;}
 
 y+=6;
 e.style.top=y+"px";
@@ -331,7 +414,6 @@ e.preventDefault();
 if(dir==="l")left=true;
 else right=true;
 });
-
 btn.addEventListener("touchend",(e)=>{
 e.preventDefault();
 if(dir==="l")left=false;
@@ -363,9 +445,10 @@ loop();
 </html>
 """
 
-@app.route("/")
-def home():
-    return render_template_string(html)
+@app.route("/", methods=["GET","POST"])
+def login():
+    error=""
+    return render_template_string(game_html,error=error)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
