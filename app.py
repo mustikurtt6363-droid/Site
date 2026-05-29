@@ -12,36 +12,12 @@ HTML = """
 <title>Neon Race</title>
 
 <style>
-
 body{
 margin:0;
 overflow:hidden;
 background:#071014;
 font-family:Arial;
 user-select:none;
-}
-
-/* MENU */
-#menu{
-position:absolute;
-inset:0;
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-background:#0b1220;
-z-index:50;
-}
-
-.menuBtn{
-width:250px;
-padding:15px;
-margin:10px;
-border:none;
-border-radius:12px;
-font-size:20px;
-background:#0891b2;
-color:white;
 }
 
 /* ROAD */
@@ -54,7 +30,6 @@ height:100%;
 background:#1a1a1a;
 border-left:2px solid #00d5ff;
 border-right:2px solid #00d5ff;
-display:none;
 }
 
 /* CAR */
@@ -65,7 +40,6 @@ width:45px;
 height:80px;
 background:#ff00aa;
 border-radius:10px;
-display:none;
 }
 
 /* ENEMY */
@@ -93,8 +67,7 @@ position:absolute;
 top:10px;
 left:10px;
 color:white;
-z-index:20;
-display:none;
+z-index:10;
 }
 
 /* CONTROLS */
@@ -106,7 +79,6 @@ display:flex;
 justify-content:space-between;
 padding:0 20px;
 box-sizing:border-box;
-display:none;
 }
 
 .btn{
@@ -118,19 +90,10 @@ background:rgba(255,255,255,0.2);
 font-size:40px;
 color:white;
 }
-
 </style>
 </head>
 
 <body>
-
-<div id="menu">
-<h1 style="color:white">NEON RACE</h1>
-
-<button class="menuBtn" onclick="startGame()">NORMAL OYUN</button>
-<button class="menuBtn" onclick="start1v1()">1V1 (BOT)</button>
-<button class="menuBtn" onclick="alert('MULTIPLAYER SONRA EKLENECEK')">MULTIPLAYER</button>
-</div>
 
 <div id="ui">
 CAN: <span id="hp">3</span> |
@@ -149,6 +112,7 @@ COIN: <span id="coin">0</span>
 
 let car=document.getElementById("car");
 let x=window.innerWidth/2;
+car.style.left=x+"px";
 
 let left=false;
 let right=false;
@@ -157,40 +121,6 @@ let hp=3;
 let coin=0;
 let dead=false;
 
-let mode="normal";
-let bot=null;
-
-/* MENU START */
-function startGame(){
-mode="normal";
-init();
-}
-
-function start1v1(){
-mode="bot";
-init();
-spawnBot();
-}
-
-/* INIT */
-function init(){
-
-document.getElementById("menu").style.display="none";
-document.getElementById("road").style.display="block";
-document.getElementById("car").style.display="block";
-document.getElementById("ui").style.display="block";
-document.getElementById("controls").style.display="flex";
-
-car.style.left=x+"px";
-
-hp=3;
-coin=0;
-dead=false;
-
-document.getElementById("hp").innerText=hp;
-document.getElementById("coin").innerText=coin;
-}
-
 /* CONTROLS */
 document.getElementById("left").ontouchstart=()=>left=true;
 document.getElementById("left").ontouchend=()=>left=false;
@@ -198,9 +128,8 @@ document.getElementById("left").ontouchend=()=>left=false;
 document.getElementById("right").ontouchstart=()=>right=true;
 document.getElementById("right").ontouchend=()=>right=false;
 
-/* LOOP */
+/* MOVE */
 function loop(){
-
 if(!dead){
 
 if(left) x-=6;
@@ -211,16 +140,12 @@ if(x>window.innerWidth-80) x=window.innerWidth-80;
 
 car.style.left=x+"px";
 }
-
 requestAnimationFrame(loop);
 }
 loop();
 
 /* ENEMY */
 function spawnEnemy(){
-
-if(dead) return;
-
 let e=document.createElement("div");
 e.className="enemy";
 e.style.left=Math.random()*(window.innerWidth-60)+"px";
@@ -260,16 +185,11 @@ clearInterval(t);
 }
 
 },20);
-
 }
-
 setInterval(spawnEnemy,900);
 
 /* COIN */
 function spawnCoin(){
-
-if(dead) return;
-
 let c=document.createElement("div");
 c.className="coin";
 c.style.left=Math.random()*(window.innerWidth-40)+"px";
@@ -303,35 +223,8 @@ clearInterval(t);
 }
 
 },20);
-
 }
 setInterval(spawnCoin,1200);
-
-/* BOT (1V1) */
-function spawnBot(){
-
-bot=document.createElement("div");
-bot.className="enemy";
-bot.style.left=(window.innerWidth/2)+20+"px";
-bot.style.top=(window.innerHeight-220)+"px";
-document.body.appendChild(bot);
-
-let by=window.innerHeight-220;
-let bx=(window.innerWidth/2)+20;
-
-setInterval(()=>{
-
-if(dead) return;
-
-by-=3.5;
-bx+=(Math.random()-0.5)*5;
-
-bot.style.top=by+"px";
-bot.style.left=bx+"px";
-
-},40);
-
-}
 
 </script>
 
