@@ -10,7 +10,7 @@ html = """
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>1V1 Neon Race</title>
+<title>Neon 1V1 Race</title>
 
 <style>
 
@@ -62,13 +62,13 @@ left:50%;
 transform:translateX(-50%);
 width:170px;
 height:100%;
-background:#1b1b1b;
-overflow:hidden;
+background:#1a1a1a;
 border-left:2px solid #00bcd4;
 border-right:2px solid #00bcd4;
+overflow:hidden;
 }
 
-/* ROAD LINE */
+/* LINES */
 
 .lane{
 position:absolute;
@@ -117,7 +117,7 @@ background:red;
 border-radius:4px;
 }
 
-/* SCORE */
+/* HEALTH */
 
 #healthBar{
 position:absolute;
@@ -152,14 +152,16 @@ z-index:50;
 }
 
 .btn{
-width:90px;
-height:90px;
+width:95px;
+height:95px;
 border:none;
 border-radius:50%;
 background:rgba(255,255,255,0.12);
 color:white;
-font-size:38px;
+font-size:40px;
 touch-action:none;
+will-change:transform;
+transform:translateZ(0);
 }
 
 /* GAME OVER */
@@ -241,6 +243,10 @@ GAME OVER
 TEKRAR OYNA
 </button>
 
+<button onclick="normalMode()">
+NORMAL OYUNA DÖN
+</button>
+
 </div>
 
 </div>
@@ -297,37 +303,88 @@ let botHealth=4;
 
 let botY=window.innerHeight-220;
 
+let botX=(window.innerWidth/2)+15;
+
 setInterval(()=>{
 
 if(dead)return;
 
-botY-=6;
+/* SPEED */
+botY-=3.5;
+
+/* RANDOM */
+botX += (Math.random()-0.5)*6;
+
+/* LIMIT */
+
+if(botX<(window.innerWidth/2)+5)
+botX=(window.innerWidth/2)+5;
+
+if(botX>(window.innerWidth/2)+45)
+botX=(window.innerWidth/2)+45;
+
+bot.style.left=botX+"px";
 
 bot.style.top=botY+"px";
 
-},20);
+},40);
 
 /* CONTROLS */
 
-function bind(btn,dir){
+const leftBtn=document.getElementById("left");
+const rightBtn=document.getElementById("right");
 
-btn.addEventListener("pointerdown",(e)=>{
-
+function pressLeft(e){
 e.preventDefault();
-
-if(dir==="l")
 left=true;
-else
-right=true;
-
-});
-
 }
 
-bind(document.getElementById("left"),"l");
-bind(document.getElementById("right"),"r");
+function releaseLeft(e){
+e.preventDefault();
+left=false;
+}
 
-window.addEventListener("pointerup",()=>{
+function pressRight(e){
+e.preventDefault();
+right=true;
+}
+
+function releaseRight(e){
+e.preventDefault();
+right=false;
+}
+
+/* LEFT */
+
+leftBtn.addEventListener(
+"touchstart",
+pressLeft,
+{passive:false}
+);
+
+leftBtn.addEventListener(
+"touchend",
+releaseLeft,
+{passive:false}
+);
+
+/* RIGHT */
+
+rightBtn.addEventListener(
+"touchstart",
+pressRight,
+{passive:false}
+);
+
+rightBtn.addEventListener(
+"touchend",
+releaseRight,
+{passive:false}
+);
+
+/* EXTRA FIX */
+
+window.addEventListener("touchend",()=>{
 
 left=false;
 right=false;
@@ -338,7 +395,7 @@ right=false;
 
 function loop(){
 
-if(dead)return;
+if(!dead){
 
 if(left)
 x-=7;
@@ -353,6 +410,8 @@ if(x>window.innerWidth-70)
 x=window.innerWidth-70;
 
 car.style.left=x+"px";
+
+}
 
 requestAnimationFrame(loop);
 
@@ -381,7 +440,6 @@ let m=setInterval(()=>{
 if(dead){
 
 o.remove();
-
 clearInterval(m);
 
 return;
@@ -457,7 +515,7 @@ clearInterval(m);
 
 }
 
-setInterval(spawnMiniObstacle,700);
+setInterval(spawnMiniObstacle,500);
 
 /* GAME OVER */
 
@@ -474,6 +532,14 @@ document.getElementById("over").style.display="flex";
 /* RESTART */
 
 function restart(){
+
+location.reload();
+
+}
+
+/* NORMAL MODE */
+
+function normalMode(){
 
 location.reload();
 
